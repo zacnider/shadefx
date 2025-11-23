@@ -2,7 +2,7 @@ import { sepolia } from 'wagmi/chains';
 import { http } from 'wagmi';
 import { createConfig } from '@privy-io/wagmi';
 
-export const PRIVY_APP_ID = 'cmhw7oti70083kz0caoaaruic';
+export const PRIVY_APP_ID = 'your_privy_app_id';
 
 export const privyConfig = {
   // Login methods - only email

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="ShadeFX - Decentralized Perpetual Exchange. Trade perpetual futures with leverage on multiple trading pairs."
+    />
+    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self' http://localhost:3000 https://shadefx.cc https://auth.privy.io https://*.privy.io;">
+    <link rel="icon" type="image/png" href="%PUBLIC_URL%/logo.png" />
+    <title>ShadeFX - Decentralized Perpetual Exchange</title>
+    <!-- Environment configuration (loaded from env-config.js in production) -->
+    <script>
+      // Set production environment variables
+      if (typeof window !== 'undefined') {
+        if (!window.__ENV__) {
+          window.__ENV__ = {};
+        }
+        // Production GraphQL endpoint
+        window.__ENV__.REACT_APP_ENVIO_GRAPHQL_URL = 'https://shadefx.cc/graphql';
+        window.__ENV__.REACT_APP_USE_PRODUCTION_INDEXER = 'false'; // Use local indexer for development
+        window.__ENV__.REACT_APP_HASURA_ADMIN_SECRET = 'testing';
+      }
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
+

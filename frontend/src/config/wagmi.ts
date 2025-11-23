@@ -2,7 +2,7 @@ import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { sepolia } from 'wagmi/chains';
 
 // Get contract address from environment
-const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS || '0x018f56040fbdd5092a898d0349afE969BDC11A97';
+const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS ||;
 
 export const config = getDefaultConfig({
   appName: 'ShadeFX',

@@ -311,8 +311,6 @@ backend/
 │   ├── config.ts                  # Configuration management
 │   ├── logger.ts                  # Logging utilities
 │   └── coingeckoApi.ts            # CoinGecko API client (optional)
-├── scripts/
-│   └── addDirectionColumn.ts      # Database migration scripts
 ├── ecosystem.config.js            # PM2 configuration
 ├── package.json                   # Dependencies and scripts
 ├── tsconfig.json                  # TypeScript configuration
@@ -323,7 +321,6 @@ backend/
 
 - [Main Project README](../README.md)
 - [FHEVM Encryption Guide](../FHEVM_ENCRYPTION.md)
-- [Deployment Guide](../DEPLOYMENT_GUIDE.md)
 
 ## 📞 Support
 

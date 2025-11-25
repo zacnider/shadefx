@@ -1,6 +1,6 @@
 # ShadeFX - Confidential Perpetual DEX
 
-A decentralized perpetual futures exchange built on Ethereum with **Fully Homomorphic Encryption (FHE)** privacy features. ShadeFX enables users to trade perpetual futures with encrypted position data, ensuring complete privacy for trading strategies and positions.
+A decentralized perpetual futures exchange built on Ethereum Sepolia with **Fully Homomorphic Encryption (FHE)** privacy features. ShadeFX enables users to trade perpetual futures with encrypted position data, ensuring complete privacy for trading strategies and positions.
 
 ## 🌟 Features
 

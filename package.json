@@ -1,7 +1,7 @@
 {
   "name": "shadefx",
   "version": "1.0.0",
-  "description": "Confidential Cross-Rate Predictor - A dApp for encrypted currency rate predictions using FHEVM",
+  "description": "Confidential Perpetual DEX",
   "main": "index.js",
   "scripts": {
     "clean": "rimraf ./artifacts ./cache ./coverage ./types ./coverage.json && npm run typechain",

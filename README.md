@@ -474,6 +474,3 @@ For issues and questions:
 - Review contract comments in `contracts/` directory
 
 ---
-
-**Built with ❤️ using  Zama FHEVM **
-

@@ -475,5 +475,5 @@ For issues and questions:
 
 ---
 
-**Built with ❤️ using FHEVM and Zama Network**
+**Built with ❤️ using  Zama FHEVM **
 

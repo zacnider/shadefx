@@ -50,10 +50,7 @@ describe("ShadeFXPerpDEX - FHEVM Integration Tests", function () {
     await priceOracle.waitForDeployment();
     oracleAddress = await priceOracle.getAddress();
 
-    // Add BTC/USD pair to oracle using forceUpdatePrice (simpler for tests)
-    await priceOracle.connect(owner).forceUpdatePrice(PAIR_KEY, INITIAL_PRICE);
-    
-    // Set pair config manually via addPairWithPyth (with zero pythPriceId for test)
+    // Add BTC/USD pair to oracle using addPairWithPyth first
     await priceOracle.connect(owner).addPairWithPyth(
       PAIR_KEY,
       "BTC",
@@ -62,6 +59,9 @@ describe("ShadeFXPerpDEX - FHEVM Integration Tests", function () {
       0, // maxOpenInterest (0 = unlimited)
       5 // maxLeverage
     );
+    
+    // Then set price using forceUpdatePrice
+    await priceOracle.connect(owner).forceUpdatePrice(PAIR_KEY, INITIAL_PRICE);
 
     // Deploy PerpDEX
     const PerpDEXFactory = await ethers.getContractFactory("ShadeFXPerpDEX");

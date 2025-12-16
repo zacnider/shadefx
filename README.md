@@ -1,22 +1,23 @@
-# ShadeFX - Confidential Cross-Rate Predictor
+# ShadeFX - Privacy-First Perpetual DEX
 
-ShadeFX is a decentralized application (dApp) that allows users to make encrypted currency rate predictions using Fully Homomorphic Encryption (FHE) via FHEVM. Users submit encrypted predictions, and only winners are revealed when results are declared.
+ShadeFX is a revolutionary decentralized perpetual futures exchange that combines blockchain technology with Fully Homomorphic Encryption (FHE) to create a truly private and secure trading experience. Built on Ethereum's Sepolia testnet, ShadeFX enables users to trade cryptocurrency pairs with leverage while protecting their trading strategies from front-running and MEV attacks.
 
 ## 🎯 Project Overview
 
 ShadeFX enables users to:
-- Submit encrypted currency rate predictions using FHEVM
-- Keep predictions private until results are declared
-- Only reveal correct predictions when results are announced
-- Claim rewards if their predictions are correct
+- Trade perpetual futures with encrypted trade directions using FHEVM
+- Protect trading strategies from front-running and MEV attacks
+- Trade with leverage (1x to 5x) on multiple cryptocurrency pairs
+- Use market orders for instant execution or limit orders for automated trading
+- Hedge positions to manage portfolio risk
 
 ## 🔒 Key Features
 
-- **Fully Encrypted Predictions**: All predictions are encrypted using FHEVM before submission
-- **Privacy-Preserving**: Predictions remain private until results are declared
-- **Winner Reveal**: Only correct predictions are revealed when results are declared
-- **Reward Pool**: Winners share the reward pool proportionally
-- **Multiple Currency Pairs**: Support for various currency pairs (EUR/USD, GBP/JPY, etc.)
+- **FHE-Encrypted Positions**: Trade directions (Long/Short) are encrypted using Fully Homomorphic Encryption before submission
+- **Front-Running Protection**: Your trading strategy remains private until execution
+- **MEV Resistance**: Encrypted transactions prevent maximal extractable value attacks
+- **Leverage Trading**: Trade with 1x to 5x leverage on multiple cryptocurrency pairs
+- **Multiple Trading Pairs**: Support for BTC/USD, ETH/USD, SOL/USD, and more
 
 ## 🏗️ Architecture
 
@@ -120,21 +121,22 @@ The frontend will be available at `http://localhost:3000`
 
 ### For Users
 
-1. **Connect Wallet**: Click "Connect Wallet" and approve the MetaMask connection
-2. **Make a Prediction**: 
-   - Select a currency pair
-   - Enter your prediction rate (e.g., 1.2345 for EUR/USD)
-   - Set your stake amount (minimum 0.01 ETH)
-   - Submit your encrypted prediction
-3. **View Results**: After the prediction deadline, check if you're a winner
-4. **Claim Rewards**: If you're a winner, claim your share of the reward pool
+1. **Connect Wallet**: Click "Connect Wallet" and approve the connection (or use embedded wallet)
+2. **Swap ETH to USDC**: In the Swap section, convert ETH to USDC for trading
+3. **Open a Position**: 
+   - Select a trading pair (e.g., BTC/USD)
+   - Choose Long or Short direction
+   - Set collateral amount and leverage (1x-5x)
+   - Open your position (direction is encrypted with FHE)
+4. **Manage Positions**: View open positions, PnL, and liquidation prices
+5. **Close Positions**: Close positions manually or set limit orders for automatic execution
 
 ### For Contract Owner
 
-1. **Create Currency Pair**: Deploy a new currency pair round
-2. **Declare Results**: After the prediction deadline, declare the real exchange rate
-3. **Reveal Winners**: Mark winners based on encrypted comparisons
-4. **Manage Settings**: Update minimum stake amount and fee percentage
+1. **Add Trading Pairs**: Add new cryptocurrency pairs to the exchange
+2. **Update Prices**: Keep price oracle updated with current market prices
+3. **Manage Fees**: Set opening and closing fees
+4. **Emergency Controls**: Pause/unpause contract if needed
 
 ## 🧪 Testing
 
@@ -160,7 +162,6 @@ shadefx/
 │   ├── IShadeFXPriceOracle.sol # Price oracle interface
 │   └── MockERC20.sol        # Mock ERC20 for testing
 ├── test/
-│   ├── ShadeFX.test.ts      # Legacy test suite
 │   └── ShadeFXPerpDEX.test.ts # FHEVM integration tests
 ├── scripts/
 │   └── deploy.ts            # Deployment script
@@ -179,12 +180,13 @@ shadefx/
 
 ## 🔐 Security Considerations
 
-- All predictions are encrypted using FHEVM before submission
-- Only contract owner can declare results
-- Winners are revealed only after result declaration
-- Secure reward distribution with fee mechanism
-- Reentrancy protection implemented
+- Trade directions are encrypted using FHEVM before submission
+- Reentrancy protection on all state-changing functions
+- Price oracle validation to prevent manipulation
+- Automatic liquidation to protect system solvency
 - Access control for admin functions
+- Emergency pause functionality
+- Safe token operations using SafeERC20
 
 ## 📝 Smart Contract Functions
 

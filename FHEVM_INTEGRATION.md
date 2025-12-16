@@ -2,7 +2,7 @@
 
 ## Overview
 
-ShadeFX uses real FHEVM (Fully Homomorphic Encryption Virtual Machine) integration for encrypted currency rate predictions. This document explains how FHEVM is integrated into the project.
+ShadeFX uses real FHEVM (Fully Homomorphic Encryption Virtual Machine) integration for encrypted perpetual futures trading. Trade directions (Long/Short) are encrypted before submission to protect trading strategies from front-running and MEV attacks. This document explains how FHEVM is integrated into the project.
 
 ## Smart Contract Integration
 
@@ -209,20 +209,22 @@ const publicKey = await provider.call({
 });
 ```
 
-## Value Scaling
+## Value Types
 
-Currency rates are scaled by 10000 to work with integers:
+ShadeFX uses different encrypted types for different purposes:
 
-- **Example**: 1.2345 → 12345
-- **Reason**: FHEVM works with integers, not decimals
-- **Format**: `value * 10000` for encryption, `value / 10000` for display
+- **Trade Direction**: `ebool` (true = Long, false = Short)
+- **Leverage**: `euint32` (1-5x leverage multiplier)
+- **Stop Loss**: `euint64` (optional encrypted stop loss price)
+
+No scaling is needed for boolean values. Leverage values are integers (1-5), so no scaling required.
 
 ## Security Considerations
 
-1. **Encryption**: All predictions are encrypted before submission
-2. **Privacy**: Predictions remain private until results are declared
-3. **Comparison**: Encrypted values are compared without decryption
-4. **Reveal**: Only winners are revealed when results are declared
+1. **Encryption**: Trade directions are encrypted before submission to prevent front-running
+2. **Privacy**: Trading strategies remain private until positions are executed
+3. **MEV Protection**: Encrypted transactions prevent maximal extractable value attacks
+4. **Public Decryption**: Directions become publicly decryptable after position opening (for open interest tracking and liquidation)
 
 ## Testing
 
@@ -236,10 +238,11 @@ import { fhevmMocks } from 'fhevmjs/mocks';
 
 ### Test Scenarios
 
-1. **Encryption Test**: Verify values are encrypted correctly
-2. **Comparison Test**: Verify encrypted comparisons work
-3. **Decryption Test**: Verify winners can decrypt their values
-4. **Integration Test**: Test end-to-end flow
+1. **Encryption Test**: Verify trade directions are encrypted correctly
+2. **Position Opening Test**: Verify encrypted positions can be opened
+3. **Limit Order Test**: Verify encrypted limit orders work correctly
+4. **Decryption Test**: Verify directions can be decrypted after position opening
+5. **Integration Test**: Test end-to-end trading flow
 
 ## Troubleshooting
 

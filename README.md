@@ -254,16 +254,18 @@ shadefx/
 
 ## 🌐 Network Support
 
-ShadeFX requires **FHEVM-compatible networks**. Supported networks:
+ShadeFX is deployed on **Sepolia Testnet** with FHEVM support. Supported networks:
 
-### Recommended Networks
+### Production Network
 
-1. **Fhenix Helium Testnet** (Recommended for FHEVM)
-   - Chain ID: 8008135
-   - RPC URL: `https://api.helium.fhenix.zone`
-   - Explorer: `https://explorer.helium.fhenix.zone`
-   - Use Case: FHEVM testing and development
-   - Deploy: `npm run deploy:fhenix`
+1. **Sepolia Testnet** (Primary Network)
+   - Chain ID: 11155111
+   - RPC URL: `https://sepolia.infura.io/v3/YOUR_KEY`
+   - Explorer: `https://sepolia.etherscan.io`
+   - Use Case: Production deployment with FHEVM support
+   - Deploy: `npm run deploy:sepolia`
+
+### Development Network
 
 2. **Localhost** (Development)
    - Chain ID: 1337
@@ -271,18 +273,11 @@ ShadeFX requires **FHEVM-compatible networks**. Supported networks:
    - Use Case: Local development and testing
    - Deploy: `npm run deploy:localhost`
 
-3. **Sepolia** (Ethereum Testnet)
-   - Chain ID: 11155111
-   - RPC URL: `https://sepolia.infura.io/v3/YOUR_KEY`
-   - Use Case: Standard Ethereum testing
-   - Note: May not support FHEVM natively
-   - Deploy: `npm run deploy:sepolia`
-
 ### Network Configuration
 
 See [NETWORKS.md](./NETWORKS.md) for detailed network configuration and setup instructions.
 
-**Important**: FHEVM requires a compatible network with FHEVM contract deployed at `0x0000000000000000000000000000000000000044`.
+**Important**: ShadeFX is deployed on Sepolia testnet with FHEVM support. FHEVM contract is deployed at `0x0000000000000000000000000000000000000044`.
 
 ## 📚 Documentation
 

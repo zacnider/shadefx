@@ -1,53 +1,59 @@
-# Zama FHE Kullanımı - ShadeFX Projesi
+# Zama FHE Usage - ShadeFX Project
 
-## Genel Bakış
+## Overview
 
-ShadeFX projesi, **Zama FHEVM (Fully Homomorphic Encryption Virtual Machine)** kullanarak blockchain üzerinde şifreli hesaplamalar yapıyor. Bu sayede kullanıcıların hassas verileri (trade direction) şifreli olarak saklanıyor ve işleniyor.
+ShadeFX project uses **Zama FHEVM (Fully Homomorphic Encryption Virtual Machine)** to perform encrypted computations on the blockchain. This allows users' sensitive data (trade direction and leverage) to be stored and processed in encrypted form.
 
-**Not**: Proje artık tamamen **Perpetual DEX** odaklıdır. Prediction Market kullanılmamaktadır.
+**Note**: The project is now fully focused on **Perpetual DEX**. Prediction Market is no longer used.
 
-## FHE ile Şifrelenen Veriler
+## Encrypted Data
 
 ### **Perpetual DEX (ShadeFXPerpDEX.sol)**
 
-#### Şifrelenen Veri: **Trade Direction (Long/Short)**
-- **Tip**: `ebool` (encrypted boolean)
-- **Değerler**: 
-  - `true` = Long (Yükseliş pozisyonu)
-  - `false` = Short (Düşüş pozisyonu)
+#### Encrypted Data 1: **Trade Direction (Long/Short)**
+- **Type**: `ebool` (encrypted boolean)
+- **Values**: 
+  - `true` = Long (Bullish position)
+  - `false` = Short (Bearish position)
 
-#### 🔓 Gizlilik Durumu: **AÇIK - Pozisyon Açıldığı Anda Herkes Görebilir**
-- `FHE.allowThis(direction)` → Contract decrypt edebilir
-- `FHE.allow(direction, msg.sender)` → Gönderen kullanıcı decrypt edebilir
-- `FHE.makePubliclyDecryptable(direction)` → **Pozisyon açıldığı anda çağrılıyor** → Herkes decrypt edebilir
-- **Sonuç**: 
-  - ✅ **Pozisyon açılmadan önce**: Gizli (front-running önlenir)
-  - ⚠️ **Pozisyon açıldığı anda**: `makePubliclyDecryptable()` çağrılıyor → Herkes görebilir
-  - **Neden**: Open interest tracking ve liquidation için gerekli
+#### Encrypted Data 2: **Leverage (1-5x)**
+- **Type**: `euint32` (encrypted unsigned 32-bit integer)
+- **Values**: 1 to 5 (leverage multiplier)
 
-#### Kullanıldığı Yerler:
+#### 🔓 Privacy Status: **REVEALED - Publicly Decryptable After Position Opening**
+- `FHE.allowThis(direction)` → Contract can decrypt
+- `FHE.allow(direction, msg.sender)` → Sender can decrypt
+- `FHE.makePubliclyDecryptable(direction)` → **Called immediately after position opening** → Everyone can decrypt
+- **Result**: 
+  - ✅ **Before position opening**: Encrypted (prevents front-running)
+  - ⚠️ **After position opening**: `makePubliclyDecryptable()` is called → Everyone can see
+  - **Why**: Required for open interest tracking and liquidation
 
-1. **`openPosition()` - Market Order**
+#### Usage Locations:
+
+1. **`createMarketOrder()` - Market Order**
    ```solidity
-   function openPosition(
+   function createMarketOrder(
        string memory pairKey,
-       externalEbool encryptedDirection,  // FHE ile şifrelenmiş direction
-       bytes calldata inputProof,          // ZKPoK proof
-       uint256 leverage,
+       externalEbool encryptedDirection,      // FHE encrypted direction
+       externalEuint32 encryptedLeverage,    // FHE encrypted leverage
+       bytes calldata inputProofDirection,   // ZKPoK proof for direction
+       bytes calldata inputProofLeverage,    // ZKPoK proof for leverage
+       uint256 leverage,                      // Plain leverage (must match encrypted)
        uint256 collateralAmount
    )
    ```
-   - Kullanıcı Long/Short seçimini frontend'de şifreler
-   - Şifrelenmiş direction contract'a gönderilir
-   - Contract içinde `FHE.fromExternal()` ile internal `ebool`'a dönüştürülür
-   - `FHE.allowThis()` ve `FHE.allow()` ile decrypt izni verilir
-   - **Pozisyon açıldığı anda** `FHE.makePubliclyDecryptable()` çağrılıyor → Herkes görebilir (open interest tracking ve liquidation için)
+   - User encrypts Long/Short direction and leverage in the frontend
+   - Encrypted direction and leverage are sent to the contract
+   - Inside the contract, `FHE.fromExternal()` converts to internal `ebool` and `euint32`
+   - `FHE.allowThis()` and `FHE.allow()` grant decryption permissions
+   - **Immediately after position opening**, `FHE.makePubliclyDecryptable()` is called for both → Everyone can see (required for open interest tracking and liquidation)
 
 2. **`createLimitOrder()` - Limit Order**
    ```solidity
    function createLimitOrder(
        string memory pairKey,
-       externalEbool encryptedDirection,  // FHE ile şifrelenmiş direction
+       externalEbool encryptedDirection,  // FHE encrypted direction
        bytes calldata inputProof,
        uint256 limitPrice,
        uint256 leverage,
@@ -55,145 +61,164 @@ ShadeFX projesi, **Zama FHEVM (Fully Homomorphic Encryption Virtual Machine)** k
        uint256 expiryTime
    )
    ```
-   - Limit order oluşturulduğunda direction şifrelenmiş olarak saklanır
-   - **Order execute edildiğinde** (pozisyon açıldığında) `makePubliclyDecryptable()` çağrılıyor → Herkes görebilir
+   - When limit order is created, direction is stored encrypted
+   - Leverage is stored as plain value (not encrypted in limit orders)
+   - **When order executes** (position opens), `makePubliclyDecryptable()` is called → Everyone can see
 
-3. **`executeMarketOrder()` - Market Order Execution**
-   - Limit order execute edildiğinde şifrelenmiş direction kullanılır
-   - Pozisyon açıldığı anda `makePubliclyDecryptable()` çağrılıyor
+3. **`executeLimitOrder()` - Limit Order Execution**
+   - When limit order executes, encrypted direction is used
+   - Position opens and `makePubliclyDecryptable()` is called immediately
 
-#### Neden Şifreleniyor?
-- **Front-running Önleme**: Pozisyon açılmadan önce direction gizli kalır, büyük pozisyonlar açılmadan önce diğer kullanıcılar göremez
-- **Strateji Koruması**: Trading stratejileri pozisyon açılana kadar gizli kalır
-- **Not**: Pozisyon açıldığı anda `makePubliclyDecryptable()` çağrıldığı için direction herkes tarafından görülebilir hale gelir (open interest tracking ve liquidation için gerekli)
+#### Why Encrypt?
+- **Front-running Prevention**: Direction and leverage remain hidden before position opening, preventing other users from seeing large positions before they're opened
+- **Strategy Protection**: Trading strategies remain hidden until position is opened
+- **Note**: Immediately after position opening, `makePubliclyDecryptable()` is called, making direction and leverage publicly visible (required for open interest tracking and liquidation)
 
-## Frontend'de FHE Kullanımı
+## Frontend FHE Usage
 
 ### 1. **FHEVM Hook (`useFHEVM.ts`)**
 
 ```typescript
-const { encryptBool, isReady: fhevmReady } = useFHEVM(provider);
+const { encryptBool, encrypt32, isReady: fhevmReady } = useFHEVM(provider);
 ```
 
-**Özellikler:**
-- `encryptBool(value, contractAddress, userAddress)`: Boolean değeri şifreler
-- `encrypt(value, contractAddress, userAddress)`: Sayısal değeri şifreler
-- `decrypt(encrypted, contractAddress, signer)`: Şifrelenmiş değeri decrypt eder
+**Features:**
+- `encryptBool(value, contractAddress, userAddress)`: Encrypts boolean values
+- `encrypt(value, contractAddress, userAddress)`: Encrypts numeric values
+- `encrypt32(value, contractAddress, userAddress)`: Encrypts 32-bit integers (for leverage)
+- `decrypt(encrypted, contractAddress, signer)`: Decrypts encrypted values (not used in practice)
 
-**Kullanılan SDK:**
-- `@zama-fhe/relayer-sdk/web` - Zama'nın web SDK'sı
-- Sepolia testnet için yapılandırılmış
-- Relayer üzerinden Gateway'e bağlanır
+**SDK Used:**
+- `@zama-fhe/relayer-sdk/web` - Zama's web SDK
+- Configured for Sepolia testnet
+- Connects to Gateway via relayer
 
 ### 2. **Position Opening (`PositionOpening.tsx`)**
 
 ```typescript
-// Direction'ı şifrele (true = Long, false = Short)
+// Encrypt direction (true = Long, false = Short)
 const directionBool = direction === 'long';
-const encryptedInput = await encryptBool(directionBool, contractAddress, account);
+const encryptedDirection = await encryptBool(directionBool, contractAddress, account);
 
-// Contract'a gönder
-const encryptedValue = ethers.hexlify(encryptedInput.handles[0]);
-const inputProof = ethers.hexlify(encryptedInput.inputProof);
+// Encrypt leverage (1-5x)
+const encryptedLeverage = await encrypt32(leverage, contractAddress, account);
 
-await contract.openPosition(
+// Format for contract
+const encryptedDirectionValue = ethers.hexlify(encryptedDirection.handles[0]);
+const encryptedLeverageValue = ethers.hexlify(encryptedLeverage.handles[0]);
+const directionProof = ethers.hexlify(encryptedDirection.inputProof);
+const leverageProof = ethers.hexlify(encryptedLeverage.inputProof);
+
+// Submit to contract
+await contract.createMarketOrder(
     pairKey,
-    encryptedValue,  // externalEbool
-    inputProof,      // bytes calldata
-    leverage,
+    encryptedDirectionValue,  // externalEbool
+    encryptedLeverageValue,    // externalEuint32
+    directionProof,           // bytes calldata
+    leverageProof,            // bytes calldata
+    leverage,                 // uint256 (plain value, must match encrypted)
     collateralAmount
 );
 ```
 
-
-## FHE İşlem Akışı
+## FHE Operation Flow
 
 ### 1. **Encryption (Frontend)**
 ```
-Kullanıcı Input (Long/Short) 
+User Input (Long/Short + Leverage) 
     ↓
-FHEVM SDK ile Şifreleme
+FHEVM SDK Encryption
     ↓
-encryptedValue (bytes32) + inputProof (bytes)
+encryptedDirection (bytes32) + encryptedLeverage (bytes32) + inputProofs (bytes)
     ↓
-Contract'a Gönderim
+Contract Submission
 ```
 
-### 2. **Contract İçinde İşleme**
+### 2. **Contract Processing**
 ```
-externalEbool (bytes32)
+externalEbool (direction) + externalEuint32 (leverage)
     ↓
-FHE.fromExternal() → ebool (internal)
+FHE.fromExternal() → ebool + euint32 (internal)
     ↓
-FHE.allowThis() → Contract decrypt edebilir
+FHE.allowThis() → Contract can decrypt
     ↓
-FHE.allow() → Kullanıcı decrypt edebilir
+FHE.allow() → User can decrypt
     ↓
-FHE.makePubliclyDecryptable() → Herkes decrypt edebilir (opsiyonel)
+FHE.makePubliclyDecryptable() → Everyone can decrypt (called after position opens)
 ```
 
 ### 3. **Decryption (Off-chain)**
 ```
-ebool (encrypted)
+ebool + euint32 (encrypted)
     ↓
 Coprocessor (Off-chain FHE computation)
     ↓
-Decrypted Value (plaintext)
+Decrypted Values (plaintext)
 ```
 
-## FHE Kullanımının Avantajları
+## FHE Usage Benefits
 
-### ✅ **Gizlilik**
-- Trade direction şifreli
-- Sadece yetkili taraflar decrypt edebilir
+### ✅ **Privacy**
+- Trade direction and leverage are encrypted
+- Only authorized parties can decrypt
+- Front-running protection until position opens
 
-### ✅ **Güvenlik**
-- Zero-Knowledge Proof (ZKPoK) ile doğrulama
-- Replay attack'ları önlenir
-- Input validation garantisi
+### ✅ **Security**
+- Zero-Knowledge Proof (ZKPoK) validation
+- Prevents replay attacks
+- Guarantees input validation
 
 ### ✅ **Decentralization**
-- Coprocessor'lar merkezi olmayan şekilde çalışır
-- Gateway koordinasyonu yapar
-- KMS (Key Management Service) threshold MPC ile güvenli
+- Coprocessors operate in a decentralized manner
+- Gateway coordinates operations
+- KMS (Key Management Service) uses threshold MPC for security
 
-## FHE Kullanımının Sınırlamaları
+## FHE Usage Limitations
 
-### ⚠️ **Mevcut Sınırlamalar**
+### ⚠️ **Current Limitations**
 
-1. **On-chain Decryption Yok**
-   - Contract içinde direkt decrypt edilemez
-   - `FHE.makePubliclyDecryptable()` ile async callback gerekir
-   - Open interest tracking için callback kullanılmalı
+1. **No On-chain Decryption**
+   - Cannot decrypt directly in contract
+   - `FHE.makePubliclyDecryptable()` requires async callback
+   - Callback must be used for open interest tracking
 
-2. **Encrypted Comparison Zorluğu**
-   - `calculatePnLEncrypted()` fonksiyonunda direction bilinmediği için
-   - Hem long hem short PnL hesaplanıyor
-   - Encrypted comparison kullanılmalı (TODO)
+2. **Encrypted Comparison Challenges**
+   - In `calculatePnLEncrypted()` function, direction is unknown
+   - Both long and short PnL are calculated
+   - Encrypted comparison should be used (TODO)
 
 3. **Performance**
-   - FHE işlemleri off-chain coprocessor'larda yapılır
-   - On-chain işlemler sadece handle'ları oluşturur
-   - Gerçek hesaplama off-chain'de
+   - FHE operations are performed on off-chain coprocessors
+   - On-chain operations only create handles
+   - Actual computation happens off-chain
 
-## FHE Kullanım Özeti
+## FHE Usage Summary
 
-| Özellik | Değer |
+| Feature | Value |
 |---------|-------|
-| **Şifrelenen Veri** | Trade Direction (Long/Short) |
-| **FHE Tipi** | `ebool` |
-| **Encryption Yeri** | Frontend (`PositionOpening.tsx`) |
-| **Contract Fonksiyonları** | `openPosition()`, `createLimitOrder()` |
-| **Decryption İzni** | `FHE.allowThis()`, `FHE.allow()` |
-| **Public Decryption** | `FHE.makePubliclyDecryptable()` (open interest için) |
+| **Encrypted Data 1** | Trade Direction (Long/Short) |
+| **Encrypted Data 2** | Leverage (1-5x) |
+| **FHE Types** | `ebool`, `euint32` |
+| **Encryption Location** | Frontend (`PositionOpening.tsx`) |
+| **Contract Functions** | `createMarketOrder()`, `createLimitOrder()` |
+| **Decryption Permissions** | `FHE.allowThis()`, `FHE.allow()` |
+| **Public Decryption** | `FHE.makePubliclyDecryptable()` (for open interest) |
+| **Network** | Sepolia Testnet |
 
-## Sonuç
+## Network Configuration
 
-ShadeFX projesi, Zama FHEVM kullanarak:
-- ✅ Trade direction'ları şifreliyor (Perpetual DEX)
-- ✅ Kullanıcı gizliliğini koruyor
-- ✅ Front-running'ı önlüyor
-- ✅ Trading stratejilerini koruyor
+ShadeFX is deployed on **Sepolia Testnet** with FHEVM support:
 
-FHE sayesinde blockchain üzerinde gizli verilerle işlem yapılabiliyor, bu da projeye önemli bir gizlilik katmanı ekliyor.
+- **FHEVM Public Key Address**: `0x0000000000000000000000000000000000000044`
+- **Relayer URL**: `https://relayer.testnet.zama.cloud`
+- **FHEVM Contracts**: Automatically configured via `ZamaEthereumConfig`
 
+## Conclusion
+
+ShadeFX project uses Zama FHEVM to:
+- ✅ Encrypt trade directions and leverage (Perpetual DEX)
+- ✅ Protect user privacy
+- ✅ Prevent front-running
+- ✅ Protect trading strategies
+
+FHE enables operations on confidential data on the blockchain, adding an important privacy layer to the project. The encryption protects sensitive information until positions are opened, after which data becomes publicly decryptable for transparency and system operations.

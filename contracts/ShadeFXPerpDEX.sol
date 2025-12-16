@@ -98,6 +98,7 @@ contract ShadeFXPerpDEX is ZamaEthereumConfig, ReentrancyGuard, Pausable, Ownabl
     mapping(uint256 => Position) public positions;          // Position ID => Position
     mapping(address => uint256[]) public userPositions;     // User => Position IDs
     mapping(string => mapping(address => uint256[])) public pairUserPositions; // Pair => User => Position IDs (for hedge)
+    mapping(uint256 => bool) public positionDirections;     // Position ID => direction (true = Long, false = Short) - decrypted for indexer
     
     // Order management
     mapping(uint256 => Order) public orders;                // Order ID => Order

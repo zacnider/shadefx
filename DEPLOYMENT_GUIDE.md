@@ -22,10 +22,6 @@ PRIVATE_KEY=your_private_key_here
 
 # RPC URLs
 SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/your_infura_key
-FHENIX_RPC_URL=https://api.helium.fhenix.zone
-
-# Chain IDs
-FHENIX_CHAIN_ID=8008135
 
 # Etherscan API Key (for contract verification)
 ETHERSCAN_API_KEY=your_etherscan_api_key
@@ -138,15 +134,6 @@ npx hardhat deploy --network sepolia --tags ShadeFXPerpDEX
 - `PRIVATE_KEY` and `SEPOLIA_RPC_URL` must be set in `.env` file
 - You must have Sepolia testnet tokens
 
-### 3. Deploy to Fhenix Helium Testnet
-
-```bash
-npm run deploy:fhenix
-```
-
-**Requirements:**
-- `PRIVATE_KEY` and `FHENIX_RPC_URL` must be set in `.env` file
-- You must have Fhenix testnet tokens
 
 ## 🔧 Post-Deployment Operations
 
@@ -216,7 +203,7 @@ After deployment, update the frontend `.env` file:
 ```env
 REACT_APP_PERPDEX_CONTRACT_ADDRESS=0x...your_deployed_perpdex_address
 REACT_APP_PRICE_ORACLE_CONTRACT_ADDRESS=0x...your_deployed_oracle_address
-REACT_APP_NETWORK=localhost  # or sepolia, fhenix
+REACT_APP_NETWORK=localhost  # or sepolia
 REACT_APP_CHAIN_ID=31337     # or 11155111, 8008135
 ```
 
@@ -308,8 +295,7 @@ In the frontend:
 2. **Testnet Tokens**: Ensure you have sufficient tokens for deployment
 3. **Network Selection**: 
    - **Development**: Localhost
-   - **Testing**: Sepolia or Fhenix Helium
-   - **Production**: Not yet available (FHEVM mainnet pending)
+   - **Testing/Production**: Sepolia Testnet
 4. **FHEVM Requirements**: Use FHEVM-compatible network
 5. **Contract Verification**: You can verify contracts on Etherscan for Sepolia
 6. **Deployment Order**: Price Oracle must be deployed before PerpDEX
@@ -351,6 +337,5 @@ npm run compile
 
 - [FHEVM Documentation](https://docs.zama.ai/fhevm)
 - [Hardhat Deploy Documentation](https://github.com/wighawag/hardhat-deploy)
-- [Fhenix Documentation](https://docs.fhenix.zone)
 - [Pyth Network Documentation](https://docs.pyth.network)
 

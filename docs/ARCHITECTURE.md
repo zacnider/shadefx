@@ -2,11 +2,11 @@
 
 ## Overview
 
-ShadeFX is built on a decentralized architecture using FHEVM (Fully Homomorphic Encryption Virtual Machine) to enable private currency rate predictions. The system consists of three main components:
+ShadeFX is built on a decentralized architecture using FHEVM (Fully Homomorphic Encryption Virtual Machine) to enable private perpetual futures trading. The system consists of three main components:
 
-1. **Smart Contract Layer**: Handles encrypted predictions, result declaration, and reward distribution
-2. **Frontend Layer**: User interface for interacting with the smart contract
-3. **FHEVM Layer**: Provides encryption/decryption capabilities
+1. **Smart Contract Layer**: Handles encrypted positions, leverage trading, and order management
+2. **Frontend Layer**: User interface for trading and portfolio management
+3. **FHEVM Layer**: Provides encryption/decryption capabilities for trade directions
 
 ## System Architecture
 
@@ -23,10 +23,16 @@ ShadeFX is built on a decentralized architecture using FHEVM (Fully Homomorphic 
 ┌─────────────────────────────────────────────────────────────┐
 │                    Blockchain Layer (FHEVM)                   │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │              ShadeFX Smart Contract                    │   │
+│  │         ShadeFXPerpDEX Smart Contract                  │   │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐│   │
-│  │  │  Predictions │  │   Results    │  │   Rewards    ││   │
+│  │  │  Positions   │  │    Orders    │  │   Liquidity  ││   │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘│   │
+│  └──────────────────────────────────────────────────────┘   │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │      ShadeFXPriceOracle Contract                       │   │
+│  │  ┌──────────────┐  ┌──────────────┐                   │   │
+│  │  │ Price Feeds  │  │ Pair Config  │                   │   │
+│  │  └──────────────┘  └──────────────┘                   │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -38,83 +44,88 @@ ShadeFX is built on a decentralized architecture using FHEVM (Fully Homomorphic 
 #### 1. Data Structures
 
 ```solidity
-struct CurrencyPair {
-    string baseCurrency;
-    string quoteCurrency;
-    bool isActive;
-    uint256 predictionDeadline;
-    uint256 resultDeadline;
-}
-
-struct Prediction {
-    euint32 encryptedPrediction;  // FHE encrypted value
-    address predictor;
+struct Position {
+    uint256 positionId;
+    address trader;
+    string pairKey;
+    ebool encryptedDirection;      // FHE encrypted: true = Long, false = Short
+    euint32 encryptedLeverage;     // FHE encrypted leverage (1-5x)
+    euint64 encryptedStopLoss;     // FHE encrypted stop loss price
+    uint256 entryPrice;
+    uint256 size;
+    uint256 collateral;
+    uint256 leverage;
     uint256 timestamp;
-    bool isWinner;
-    bool rewardClaimed;
+    bool isOpen;
+    uint256 liquidationPrice;
 }
 
-struct Round {
-    uint256 roundId;
-    CurrencyPair pair;
-    euint32 encryptedRealValue;
-    bool resultDeclared;
-    uint256 totalPredictions;
-    uint256 totalRewardPool;
-    mapping(address => Prediction) predictions;
-    address[] predictors;
+struct Order {
+    uint256 orderId;
+    address trader;
+    string pairKey;
+    OrderType orderType;           // MARKET or LIMIT
+    OrderStatus status;            // PENDING, EXECUTED, CANCELLED, EXPIRED
+    ebool encryptedDirection;      // FHE encrypted direction
+    uint256 limitPrice;
+    uint256 collateralAmount;
+    uint256 leverage;
+    uint256 timestamp;
+    uint256 expiryTime;
 }
 ```
 
 #### 2. State Management
 
-- **Rounds Mapping**: `mapping(string => Round)` - Stores rounds by currency pair key
-- **Active Pairs**: `string[]` - List of active currency pairs
+- **Positions Mapping**: `mapping(uint256 => Position)` - Stores positions by ID
+- **User Positions**: `mapping(address => uint256[])` - User's position IDs
+- **Orders Mapping**: `mapping(uint256 => Order)` - Stores orders by ID
+- **Liquidity Pool**: Manages available liquidity for trading
 - **Access Control**: Owner-only functions for admin operations
 
 #### 3. Workflow
 
 ```
-1. Owner creates currency pair round
-   └─> Sets prediction deadline and result deadline
+1. User selects trading pair and direction
+   └─> Direction encrypted with FHE on client side
+   └─> Encrypted transaction sent to contract
 
-2. Users submit encrypted predictions
-   └─> Predictions stored as euint32 (FHE encrypted)
-   └─> Stake amount added to reward pool
+2. Contract receives encrypted direction
+   └─> Validates collateral and leverage
+   └─> Opens position with encrypted direction
+   └─> Makes direction publicly decryptable (for open interest tracking)
 
-3. Owner declares result
-   └─> Real value encrypted and stored
-   └─> resultDeclared flag set to true
+3. Position management
+   └─> User can close position manually
+   └─> System can liquidate undercollateralized positions
+   └─> PnL calculated based on price movements
 
-4. Owner reveals winners
-   └─> Winners marked based on encrypted comparison
-   └─> isWinner flag set for winners
-
-5. Winners claim rewards
-   └─> Reward calculated and distributed
-   └─> Fee sent to owner
+4. Limit orders
+   └─> User creates limit order with encrypted direction
+   └─> Order executes automatically when price condition met
+   └─> Position opened with same encrypted direction
 ```
 
 ## FHEVM Integration
 
 ### Encryption Flow
 
-1. **Frontend**: User enters prediction value
-2. **FHEVM SDK**: Encrypts value using FHEVM Relayer
-3. **Smart Contract**: Receives encrypted value as `inEuint32`
-4. **Storage**: Encrypted value stored as `euint32`
+1. **Frontend**: User selects Long or Short direction
+2. **FHEVM SDK**: Encrypts direction as `ebool` using Relayer SDK
+3. **Smart Contract**: Receives encrypted direction as `externalEbool`
+4. **Storage**: Encrypted direction stored as `ebool` in position
 
 ### Decryption Flow
 
-1. **Smart Contract**: Compares encrypted values using `TFHE.eq()`
-2. **Owner**: Reveals winners based on comparison results
-3. **Frontend**: Winners can view their status and claim rewards
+1. **Position Opening**: Direction made publicly decryptable for open interest tracking
+2. **Frontend**: Can decrypt direction after position is opened
+3. **Liquidation**: System can decrypt direction for liquidation logic
 
 ### Key Operations
 
-- **Encryption**: `TFHE.asEuint32(inEuint32)` - Convert external encrypted value to internal
-- **Comparison**: `TFHE.eq(euint32, euint32)` - Compare encrypted values
-- **Decryption**: Only performed for winners after result declaration
+- **Encryption**: `FHE.fromExternal(externalEbool, inputProof)` - Convert external encrypted value to internal
+- **Permission**: `FHE.allowThis(ebool)` - Allow contract to decrypt
+- **Public Decryption**: `FHE.makePubliclyDecryptable(ebool)` - Make value publicly decryptable
 
 ## Frontend Architecture
 
@@ -123,17 +134,25 @@ struct Round {
 ```
 src/
 ├── components/
-│   └── Header.tsx          # Navigation and wallet connection
+│   ├── PositionOpening.tsx    # Open new positions
+│   ├── OpenPositions.tsx      # View and manage positions
+│   ├── Orders.tsx             # Limit orders management
+│   ├── PriceChart.tsx         # TradingView-style charts
+│   └── OrderBook.tsx          # Order book visualization
 ├── contexts/
-│   └── WalletContext.tsx   # Wallet state management
+│   └── WalletContext.tsx      # Wallet state management
 ├── hooks/
-│   └── useFHEVM.ts         # FHEVM encryption/decryption
+│   ├── useFHEVM.ts           # FHEVM encryption/decryption
+│   └── useIntentExecutor.ts  # Intent-based trading
 ├── pages/
-│   ├── Home.tsx            # Landing page
-│   ├── Predictions.tsx     # Prediction submission
-│   └── Results.tsx         # Results and rewards
+│   ├── Home.tsx              # Landing page
+│   ├── Predictions.tsx       # Trading interface
+│   ├── Portfolio.tsx         # Portfolio management
+│   └── Leaderboard.tsx       # Trading leaderboard
 └── utils/
-    └── contract.ts         # Contract interaction utilities
+    ├── contract.ts           # Contract interaction utilities
+    ├── priceApi.ts           # Price feed integration
+    └── fhevm.ts              # FHEVM utilities
 ```
 
 ### State Management
@@ -141,87 +160,93 @@ src/
 - **Wallet Context**: Manages wallet connection and account state
 - **FHEVM Hook**: Handles encryption/decryption operations
 - **React Query**: Manages server state and caching
+- **GraphQL**: Envio indexer for efficient blockchain queries
 
 ### User Flow
 
 ```
-1. User connects wallet
+1. User connects wallet (or uses embedded wallet)
    └─> WalletContext initializes
-
-2. User navigates to Predictions page
    └─> FHEVM hook initializes
-   └─> Currency pairs loaded
 
-3. User submits prediction
-   └─> Value encrypted using FHEVM
+2. User navigates to Trading page
+   └─> Trading pairs loaded from indexer
+   └─> Real-time price feeds connected
+
+3. User opens position
+   └─> Direction encrypted using FHEVM
    └─> Transaction sent to contract
-   └─> Prediction stored encrypted
+   └─> Position stored with encrypted direction
 
-4. User checks results
-   └─> Contract queried for winner status
-   └─> Reward pool displayed
+4. User manages positions
+   └─> View open positions and PnL
+   └─> Close positions manually
+   └─> Set limit orders
 
-5. Winner claims reward
-   └─> Transaction sent to contract
-   └─> Reward distributed
+5. System manages positions
+   └─> Automatic liquidation for undercollateralized positions
+   └─> Limit order execution when price conditions met
 ```
 
 ## Security Architecture
 
 ### Encryption Security
 
-- **FHE Encryption**: All predictions encrypted before submission
+- **FHE Encryption**: Trade directions encrypted before submission
 - **Private Keys**: Never exposed to frontend or contract
-- **Encrypted Storage**: Predictions stored as `euint32` (encrypted)
+- **Encrypted Storage**: Directions stored as `ebool` (encrypted)
+- **Public Decryption**: Directions become publicly decryptable after opening (for transparency and liquidation)
 
 ### Access Control
 
 - **Owner Functions**: Only contract owner can:
-  - Create currency pairs
-  - Declare results
-  - Reveal winners
-  - Update settings
+  - Add trading pairs
+  - Update price oracle
+  - Set fees
+  - Pause/unpause contract
 
 - **User Functions**: Any user can:
-  - Submit predictions
-  - Check winner status
-  - Claim rewards (if winner)
+  - Open positions
+  - Close positions
+  - Create limit orders
+  - Cancel orders
 
 ### Smart Contract Security
 
-- **Reentrancy Protection**: Secure reward distribution
+- **Reentrancy Protection**: All state-changing functions protected
 - **Input Validation**: All inputs validated
-- **Deadline Enforcement**: Predictions and results respect deadlines
-- **Fee Mechanism**: Configurable fee percentage (max 20%)
+- **Price Validation**: Staleness and deviation checks
+- **Liquidation System**: Automatic liquidation for undercollateralized positions
+- **Safe Token Operations**: SafeERC20 for all token transfers
 
 ## Data Flow
 
-### Prediction Submission
+### Position Opening
 
 ```
 User Input → Frontend Validation → FHEVM Encryption → 
-Smart Contract → Encrypted Storage → Event Emission
+Smart Contract → Encrypted Storage → Position Opened → Event Emission
 ```
 
-### Result Declaration
+### Position Closing
 
 ```
-Owner Input → FHEVM Encryption → Smart Contract → 
-Encrypted Storage → Result Declared → Event Emission
+User Action → Smart Contract → Direction Decryption → 
+PnL Calculation → Collateral Return → Position Closed → Event Emission
 ```
 
-### Winner Reveal
+### Limit Order Execution
 
 ```
-Owner Action → Smart Contract → Encrypted Comparison → 
-Winner Marking → Event Emission
+Price Update → Keeper/Backend → Check Limit Orders → 
+Price Condition Met → Execute Order → Position Opened → Event Emission
 ```
 
-### Reward Claiming
+### Liquidation
 
 ```
-Winner Action → Smart Contract → Winner Verification → 
-Reward Calculation → Distribution → Event Emission
+Price Update → Check Positions → Calculate Margin → 
+Undercollateralized → Liquidate Position → Event Emission
 ```
 
 ## Scalability Considerations
@@ -230,13 +255,14 @@ Reward Calculation → Distribution → Event Emission
 
 - **Gas Costs**: FHE operations are gas-intensive
 - **Storage**: Encrypted values require more storage
-- **Network**: Requires FHEVM-compatible network
+- **Network**: Requires FHEVM-compatible network (Sepolia with Zama Gateway)
 
 ### Future Improvements
 
-- **Batch Operations**: Batch winner reveals
+- **Batch Operations**: Batch limit order execution
 - **Optimized Storage**: Use compression for encrypted values
 - **Layer 2**: Deploy on FHEVM-compatible L2 solutions
+- **Cross-Chain**: Support for multiple FHEVM networks
 
 ## Testing Architecture
 
@@ -245,10 +271,11 @@ Reward Calculation → Distribution → Event Emission
 - **Contract Functions**: Test individual functions
 - **Access Control**: Test owner vs user permissions
 - **Edge Cases**: Test boundary conditions
+- **FHEVM Operations**: Test encryption/decryption flows
 
 ### Integration Tests
 
-- **End-to-End Flow**: Test complete prediction flow
+- **End-to-End Flow**: Test complete trading flow
 - **FHEVM Mocking**: Mock FHEVM operations for testing
 - **Event Testing**: Verify event emissions
 
@@ -268,32 +295,34 @@ Reward Calculation → Distribution → Event Emission
 
 ### Production
 
-- **Testnet**: Sepolia or FHEVM testnet
+- **Testnet**: Ethereum Sepolia with Zama Gateway
 - **Contract**: Deployed and verified
-- **Frontend**: Hosted on IPFS or traditional hosting
-- **FHEVM Relayer**: External relayer service
+- **Frontend**: Hosted on Vercel/Netlify
+- **FHEVM Relayer**: Zama Gateway service
+- **Indexer**: Envio GraphQL indexer
 
 ## Monitoring and Analytics
 
 ### Events
 
-- `PredictionSubmitted`: When user submits prediction
-- `ResultDeclared`: When owner declares result
-- `WinnerRevealed`: When winner is revealed
-- `RewardClaimed`: When winner claims reward
+- `PositionOpened`: When user opens a position
+- `PositionClosed`: When position is closed
+- `OrderCreated`: When limit order is created
+- `OrderExecuted`: When limit order executes
+- `PositionLiquidated`: When position is liquidated
 
 ### Metrics
 
-- Total predictions per round
-- Reward pool size
-- Winner count
-- Average stake amount
+- Total open positions
+- Total open interest (long/short)
+- Trading volume
+- Liquidation events
+- Average position size
 
 ## Future Enhancements
 
-1. **Multi-Round Support**: Support multiple concurrent rounds
-2. **Advanced Analytics**: Prediction statistics and trends
+1. **Advanced Order Types**: Stop-loss, take-profit orders
+2. **Cross-Margin**: Shared margin across positions
 3. **Governance**: DAO-based governance for settings
-4. **Cross-Chain**: Support for multiple FHEVM networks
-5. **Mobile App**: Native mobile application
-
+4. **Mobile App**: Native mobile application
+5. **Social Trading**: Copy trading features

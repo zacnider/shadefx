@@ -2,456 +2,425 @@
 
 ## Smart Contract API
 
-### Contract: ShadeFX
+### Contract: ShadeFXPerpDEX
 
 **Address**: Deployed contract address (set in environment variables)
 
 ### Events
 
-#### PredictionSubmitted
+#### PositionOpened
 ```solidity
-event PredictionSubmitted(
-    string indexed currencyPair,
-    address indexed predictor,
-    uint256 timestamp
+event PositionOpened(
+    uint256 indexed positionId,
+    address indexed trader,
+    string indexed pairKey,
+    uint256 entryPrice,
+    uint256 size,
+    uint256 collateral,
+    uint256 leverage,
+    uint256 openingFee
 );
 ```
-Emitted when a user submits a prediction.
+Emitted when a user opens a new position.
 
-#### ResultDeclared
+#### PositionClosed
 ```solidity
-event ResultDeclared(
-    string indexed currencyPair,
-    uint256 timestamp
+event PositionClosed(
+    uint256 indexed positionId,
+    address indexed trader,
+    string indexed pairKey,
+    uint256 exitPrice,
+    int256 pnl,
+    uint256 collateralReturned,
+    uint256 closingFee
 );
 ```
-Emitted when the owner declares the result.
+Emitted when a position is closed.
 
-#### WinnerRevealed
+#### OrderCreated
 ```solidity
-event WinnerRevealed(
-    string indexed currencyPair,
-    address indexed winner,
-    uint256 reward
+event OrderCreated(
+    uint256 indexed orderId,
+    address indexed trader,
+    string indexed pairKey,
+    OrderType orderType,
+    uint256 limitPrice,
+    uint256 collateralAmount,
+    uint256 leverage
 );
 ```
-Emitted when a winner is revealed.
+Emitted when a limit order is created.
 
-#### RewardClaimed
+#### OrderExecuted
 ```solidity
-event RewardClaimed(
-    string indexed currencyPair,
-    address indexed claimer,
-    uint256 amount
+event OrderExecuted(
+    uint256 indexed orderId,
+    uint256 indexed positionId,
+    address indexed trader,
+    string pairKey,
+    uint256 executionPrice
 );
 ```
-Emitted when a winner claims their reward.
+Emitted when a limit order is executed.
 
-#### CurrencyPairCreated
+#### PositionLiquidated
 ```solidity
-event CurrencyPairCreated(
-    string indexed currencyPair,
-    string baseCurrency,
-    string quoteCurrency,
-    uint256 predictionDeadline
+event PositionLiquidated(
+    uint256 indexed positionId,
+    address indexed trader,
+    string indexed pairKey,
+    address liquidator,
+    uint256 liquidationPrice
 );
 ```
-Emitted when a new currency pair is created.
+Emitted when a position is liquidated.
 
 ---
 
 ## User Functions
 
-### submitPrediction
+### createMarketOrder
 
-Submit an encrypted currency rate prediction.
+Open a position with market order (immediate execution).
 
 ```solidity
-function submitPrediction(
-    string memory currencyPairKey,
-    inEuint32 calldata encryptedPrediction
-) external payable
+function createMarketOrder(
+    string memory pairKey,
+    externalEbool encryptedDirection,
+    externalEuint32 encryptedLeverage,
+    bytes calldata inputProofDirection,
+    bytes calldata inputProofLeverage,
+    uint256 leverage,
+    uint256 collateralAmount
+) external
 ```
 
 **Parameters:**
-- `currencyPairKey` (string): The currency pair identifier (e.g., "EURUSD")
-- `encryptedPrediction` (inEuint32): The encrypted prediction value (scaled by 10000)
-
-**Payable:** Yes - Must send at least `minStakeAmount` ETH
+- `pairKey` (string): The trading pair identifier (e.g., "BTCUSD")
+- `encryptedDirection` (externalEbool): FHE encrypted direction (true = Long, false = Short)
+- `encryptedLeverage` (externalEuint32): FHE encrypted leverage (1-5x)
+- `inputProofDirection` (bytes): Input proof for encrypted direction
+- `inputProofLeverage` (bytes): Input proof for encrypted leverage
+- `leverage` (uint256): Plain leverage value (must match encrypted value)
+- `collateralAmount` (uint256): Collateral amount in USDC (6 decimals)
 
 **Requirements:**
-- Currency pair must be active
-- Current time must be before prediction deadline
-- User must not have already submitted a prediction for this pair
-- Stake amount must be at least `minStakeAmount`
+- Pair must be active
+- Collateral must be at least MIN_COLLATERAL (5 USDC)
+- Leverage must be between 1 and maxLeverage (5x)
+- User must have sufficient USDC balance
+- Price must not be stale
 
 **Events:**
-- `PredictionSubmitted`
+- `PositionOpened`
 
 **Example:**
 ```javascript
-const encryptedPrediction = await fhevm.encrypt(12345); // 1.2345 scaled by 10000
-await contract.submitPrediction("EURUSD", encryptedPrediction, {
-  value: ethers.parseEther("0.01")
-});
-```
-
----
-
-### checkWinner
-
-Check if a user is a winner for a specific currency pair.
-
-```solidity
-function checkWinner(
-    string memory currencyPairKey,
-    address userAddress
-) external view returns (bool isWinner)
-```
-
-**Parameters:**
-- `currencyPairKey` (string): The currency pair identifier
-- `userAddress` (address): The address to check
-
-**Returns:**
-- `isWinner` (bool): True if the user is a winner
-
-**Requirements:**
-- Result must be declared
-- User must have submitted a prediction
-
-**Example:**
-```javascript
-const isWinner = await contract.checkWinner("EURUSD", userAddress);
-```
-
----
-
-### claimReward
-
-Claim reward if the caller is a winner.
-
-```solidity
-function claimReward(string memory currencyPairKey) external
-```
-
-**Parameters:**
-- `currencyPairKey` (string): The currency pair identifier
-
-**Requirements:**
-- Result must be declared
-- Caller must be a winner
-- Caller must not have already claimed the reward
-
-**Events:**
-- `RewardClaimed`
-
-**Example:**
-```javascript
-await contract.claimReward("EURUSD");
-```
-
----
-
-### getPredictionCount
-
-Get the total number of predictions for a currency pair.
-
-```solidity
-function getPredictionCount(string memory currencyPairKey) 
-    external view returns (uint256 count)
-```
-
-**Parameters:**
-- `currencyPairKey` (string): The currency pair identifier
-
-**Returns:**
-- `count` (uint256): Total number of predictions
-
-**Example:**
-```javascript
-const count = await contract.getPredictionCount("EURUSD");
-```
-
----
-
-### getRewardPool
-
-Get the total reward pool for a currency pair.
-
-```solidity
-function getRewardPool(string memory currencyPairKey) 
-    external view returns (uint256 pool)
-```
-
-**Parameters:**
-- `currencyPairKey` (string): The currency pair identifier
-
-**Returns:**
-- `pool` (uint256): Total reward pool in wei
-
-**Example:**
-```javascript
-const pool = await contract.getRewardPool("EURUSD");
-const poolInEth = ethers.formatEther(pool);
-```
-
----
-
-### getActivePairs
-
-Get all active currency pairs.
-
-```solidity
-function getActivePairs() external view returns (string[] memory pairs)
-```
-
-**Returns:**
-- `pairs` (string[]): Array of active currency pair keys
-
-**Example:**
-```javascript
-const pairs = await contract.getActivePairs();
-```
-
----
-
-## Admin Functions
-
-### createCurrencyPair
-
-Create a new currency pair round (owner only).
-
-```solidity
-function createCurrencyPair(
-    string memory currencyPairKey,
-    string memory baseCurrency,
-    string memory quoteCurrency,
-    uint256 predictionDeadline,
-    uint256 resultDeadline
-) external onlyOwner
-```
-
-**Parameters:**
-- `currencyPairKey` (string): Unique identifier for the currency pair
-- `baseCurrency` (string): Base currency symbol (e.g., "EUR")
-- `quoteCurrency` (string): Quote currency symbol (e.g., "USD")
-- `predictionDeadline` (uint256): Unix timestamp when predictions close
-- `resultDeadline` (uint256): Unix timestamp when results must be declared
-
-**Requirements:**
-- Caller must be owner
-- Currency pair must not already exist
-- Prediction deadline must be in the future
-- Result deadline must be after prediction deadline
-
-**Events:**
-- `CurrencyPairCreated`
-
-**Example:**
-```javascript
-const predictionDeadline = Math.floor(Date.now() / 1000) + 86400; // 1 day
-const resultDeadline = predictionDeadline + 86400; // 2 days
-await contract.createCurrencyPair(
-  "EURUSD",
-  "EUR",
-  "USD",
-  predictionDeadline,
-  resultDeadline
+const encryptedDirection = await encryptBool(true); // Long
+const encryptedLeverage = await encrypt32(2); // 2x leverage
+await contract.createMarketOrder(
+  "BTCUSD",
+  encryptedDirection.handles[0],
+  encryptedLeverage.handles[0],
+  encryptedDirection.inputProof,
+  encryptedLeverage.inputProof,
+  2,
+  ethers.parseUnits("10", 6) // 10 USDC
 );
 ```
 
 ---
 
-### declareResult
+### createLimitOrder
 
-Declare the real exchange rate result (owner only).
+Create a limit order (executes when price reaches limit price).
 
 ```solidity
-function declareResult(
-    string memory currencyPairKey,
-    inEuint32 calldata encryptedRealValue
-) external onlyOwner
+function createLimitOrder(
+    string memory pairKey,
+    externalEbool encryptedDirection,
+    bytes calldata inputProof,
+    uint256 limitPrice,
+    uint256 leverage,
+    uint256 collateralAmount,
+    uint256 expiryTime
+) external
 ```
 
 **Parameters:**
-- `currencyPairKey` (string): The currency pair identifier
-- `encryptedRealValue` (inEuint32): The encrypted real exchange rate value
+- `pairKey` (string): The trading pair identifier
+- `encryptedDirection` (externalEbool): FHE encrypted direction
+- `inputProof` (bytes): Input proof for encrypted direction
+- `limitPrice` (uint256): Limit price (scaled by PRICE_PRECISION = 1e8)
+- `leverage` (uint256): Leverage multiplier (1-5x)
+- `collateralAmount` (uint256): Collateral amount in USDC
+- `expiryTime` (uint256): Order expiry timestamp (0 = no expiry)
 
 **Requirements:**
-- Caller must be owner
-- Prediction deadline must have passed
-- Result deadline must not have passed
-- Result must not already be declared
+- Pair must be active
+- Collateral must be at least MIN_COLLATERAL
+- Leverage must be valid
+- User must have sufficient USDC balance
 
 **Events:**
-- `ResultDeclared`
+- `OrderCreated`
 
 **Example:**
 ```javascript
-const encryptedRealValue = await fhevm.encrypt(12350); // 1.2350 scaled by 10000
-await contract.declareResult("EURUSD", encryptedRealValue);
+const limitPrice = 50000 * 1e8; // $50,000
+const encryptedDirection = await encryptBool(false); // Short
+await contract.createLimitOrder(
+  "BTCUSD",
+  encryptedDirection.handles[0],
+  encryptedDirection.inputProof,
+  limitPrice,
+  3, // 3x leverage
+  ethers.parseUnits("20", 6), // 20 USDC
+  0 // No expiry
+);
 ```
 
 ---
 
-### revealWinners
+### closePositionWithDirection
 
-Reveal winners for a currency pair (owner only).
+Close an open position.
 
 ```solidity
-function revealWinners(
-    string memory currencyPairKey,
-    address[] calldata winners
-) external onlyOwner
+function closePositionWithDirection(
+    uint256 positionId,
+    bool isLong
+) external
 ```
 
 **Parameters:**
-- `currencyPairKey` (string): The currency pair identifier
-- `winners` (address[]): Array of winner addresses
+- `positionId` (uint256): Position ID to close
+- `isLong` (bool): Decrypted direction (true = Long, false = Short)
 
 **Requirements:**
-- Caller must be owner
-- Result must be declared
-- All addresses must have submitted predictions
+- Position must be open
+- Caller must be position owner
+- Price must not be stale
 
 **Events:**
-- `WinnerRevealed` (for each winner)
+- `PositionClosed`
 
 **Example:**
 ```javascript
-const winners = [address1, address2, address3];
-await contract.revealWinners("EURUSD", winners);
+await contract.closePositionWithDirection(1, true); // Close long position
 ```
 
 ---
 
-### setMinStakeAmount
+### cancelOrder
 
-Update the minimum stake amount (owner only).
+Cancel a pending limit order.
 
 ```solidity
-function setMinStakeAmount(uint256 _minStakeAmount) external onlyOwner
+function cancelOrder(uint256 orderId) external
 ```
 
 **Parameters:**
-- `_minStakeAmount` (uint256): New minimum stake amount in wei
+- `orderId` (uint256): Order ID to cancel
 
 **Requirements:**
-- Caller must be owner
+- Order must be pending
+- Caller must be order owner
+
+**Events:**
+- `OrderCancelled`
 
 **Example:**
 ```javascript
-await contract.setMinStakeAmount(ethers.parseEther("0.02"));
+await contract.cancelOrder(1);
 ```
 
 ---
 
-### setRewardFeePercentage
+### getUserPositions
 
-Update the reward fee percentage (owner only).
+Get all position IDs for a user.
 
 ```solidity
-function setRewardFeePercentage(uint256 _rewardFeePercentage) external onlyOwner
+function getUserPositions(address user) 
+    external view returns (uint256[] memory)
 ```
 
 **Parameters:**
-- `_rewardFeePercentage` (uint256): New fee percentage (e.g., 5 = 5%)
+- `user` (address): User address
 
-**Requirements:**
-- Caller must be owner
-- Fee percentage must not exceed 20%
+**Returns:**
+- `uint256[]`: Array of position IDs
 
 **Example:**
 ```javascript
-await contract.setRewardFeePercentage(10); // 10%
+const positionIds = await contract.getUserPositions(userAddress);
 ```
 
 ---
 
-### emergencyWithdraw
+### getUserPairPositions
 
-Emergency withdraw all funds (owner only).
+Get position IDs for a specific pair and user.
 
 ```solidity
-function emergencyWithdraw() external onlyOwner
+function getUserPairPositions(
+    string memory pairKey,
+    address user
+) external view returns (uint256[] memory)
 ```
+
+**Parameters:**
+- `pairKey` (string): Trading pair identifier
+- `user` (address): User address
+
+**Returns:**
+- `uint256[]`: Array of position IDs
+
+---
+
+### positions
+
+Get position information.
+
+```solidity
+function positions(uint256 positionId) 
+    external view returns (Position memory)
+```
+
+**Parameters:**
+- `positionId` (uint256): Position ID
+
+**Returns:**
+- `Position`: Position struct with all position data
+
+---
+
+## Admin Functions
+
+### setOpeningFeeBP
+
+Set opening fee in basis points (owner only).
+
+```solidity
+function setOpeningFeeBP(uint256 _openingFeeBP) external onlyOwner
+```
+
+**Parameters:**
+- `_openingFeeBP` (uint256): Opening fee in basis points (e.g., 25 = 0.025%)
 
 **Requirements:**
 - Caller must be owner
+- Fee must not exceed 100 (1%)
 
-**Example:**
-```javascript
-await contract.emergencyWithdraw();
+---
+
+### setClosingFeeBP
+
+Set closing fee in basis points (owner only).
+
+```solidity
+function setClosingFeeBP(uint256 _closingFeeBP) external onlyOwner
+```
+
+**Parameters:**
+- `_closingFeeBP` (uint256): Closing fee in basis points
+
+**Requirements:**
+- Caller must be owner
+- Fee must not exceed 100 (1%)
+
+---
+
+### setMaxLeverage
+
+Set maximum leverage (owner only).
+
+```solidity
+function setMaxLeverage(uint256 _maxLeverage) external onlyOwner
+```
+
+**Parameters:**
+- `_maxLeverage` (uint256): Maximum leverage (1-20x)
+
+**Requirements:**
+- Caller must be owner
+- Leverage must be between 1 and 20
+
+---
+
+### pause / unpause
+
+Emergency pause/unpause functionality (owner only).
+
+```solidity
+function pause() external onlyOwner
+function unpause() external onlyOwner
 ```
 
 ---
 
 ## View Functions
 
-### owner
+### maxLeverage
 
-Get the contract owner address.
+Get maximum leverage.
 
 ```solidity
-function owner() external view returns (address)
+function maxLeverage() external view returns (uint256)
 ```
 
-**Returns:**
-- `address`: Owner address
+### openingFeeBP
+
+Get opening fee in basis points.
+
+```solidity
+function openingFeeBP() external view returns (uint256)
+```
+
+### closingFeeBP
+
+Get closing fee in basis points.
+
+```solidity
+function closingFeeBP() external view returns (uint256)
+```
+
+### MIN_COLLATERAL
+
+Get minimum collateral amount.
+
+```solidity
+function MIN_COLLATERAL() external view returns (uint256)
+```
 
 ---
 
-### minStakeAmount
+## Price Oracle API
 
-Get the minimum stake amount.
+### Contract: ShadeFXPriceOracle
 
-```solidity
-function minStakeAmount() external view returns (uint256)
-```
+### getPrice
 
-**Returns:**
-- `uint256`: Minimum stake amount in wei
-
----
-
-### rewardFeePercentage
-
-Get the reward fee percentage.
+Get current price for a trading pair.
 
 ```solidity
-function rewardFeePercentage() external view returns (uint256)
-```
-
-**Returns:**
-- `uint256`: Fee percentage (e.g., 5 = 5%)
-
----
-
-### rounds
-
-Get round information for a currency pair.
-
-```solidity
-function rounds(string memory currencyPairKey) 
+function getPrice(string memory pairKey) 
     external view returns (
-        uint256 roundId,
-        CurrencyPair memory pair,
-        bool resultDeclared,
-        uint256 totalPredictions,
-        uint256 totalRewardPool
+        uint256 price,
+        uint256 lastUpdateTime,
+        bool isActive
     )
 ```
 
-**Parameters:**
-- `currencyPairKey` (string): The currency pair identifier
+### getPairConfig
 
-**Returns:**
-- `roundId` (uint256): Round ID
-- `pair` (CurrencyPair): Currency pair information
-- `resultDeclared` (bool): Whether result is declared
-- `totalPredictions` (uint256): Total number of predictions
-- `totalRewardPool` (uint256): Total reward pool in wei
+Get pair configuration.
+
+```solidity
+function getPairConfig(string memory pairKey) 
+    external view returns (PairConfig memory)
+```
 
 ---
 
@@ -460,19 +429,11 @@ function rounds(string memory currencyPairKey)
 ### Wallet Context
 
 #### connectWallet()
-Connect the user's MetaMask wallet.
+Connect the user's wallet (MetaMask or embedded wallet).
 
 ```typescript
 const { connectWallet } = useWallet();
 await connectWallet();
-```
-
-#### disconnectWallet()
-Disconnect the wallet.
-
-```typescript
-const { disconnectWallet } = useWallet();
-disconnectWallet();
 ```
 
 #### Properties
@@ -480,38 +441,35 @@ disconnectWallet();
 - `isConnected`: Whether wallet is connected
 - `chainId`: Current chain ID
 - `signer`: Ethers.js signer instance
+- `embeddedWallet`: Embedded wallet instance (if using Privy)
 
 ---
 
 ### FHEVM Hook
 
-#### encrypt(value)
-Encrypt a value using FHEVM.
+#### encryptBool(value, contractAddress, userAddress)
+Encrypt a boolean value using FHEVM.
 
 ```typescript
-const { encrypt } = useFHEVM();
-const encrypted = await encrypt(12345); // Scaled value
+const { encryptBool } = useFHEVM();
+const encrypted = await encryptBool(
+  true, // Long = true, Short = false
+  contractAddress,
+  userAddress
+);
 ```
 
-**Parameters:**
-- `value` (number): Value to encrypt (should be scaled by 10000)
-
-**Returns:**
-- `encrypted` (any): Encrypted value
-
-#### decrypt(encrypted)
-Decrypt an encrypted value.
+#### encrypt32(value, contractAddress, userAddress)
+Encrypt a uint32 value using FHEVM.
 
 ```typescript
-const { decrypt } = useFHEVM();
-const decrypted = await decrypt(encrypted);
+const { encrypt32 } = useFHEVM();
+const encrypted = await encrypt32(
+  2, // Leverage value
+  contractAddress,
+  userAddress
+);
 ```
-
-**Parameters:**
-- `encrypted` (any): Encrypted value
-
-**Returns:**
-- `decrypted` (number): Decrypted value
 
 #### Properties
 - `isReady`: Whether FHEVM is ready
@@ -524,36 +482,32 @@ const decrypted = await decrypt(encrypted);
 ### Common Errors
 
 - `"ShadeFX: caller is not the owner"`: Function requires owner privileges
-- `"ShadeFX: currency pair not active"`: Currency pair does not exist or is inactive
-- `"ShadeFX: prediction deadline passed"`: Cannot submit prediction after deadline
-- `"ShadeFX: stake amount too low"`: Stake amount below minimum
-- `"ShadeFX: prediction already submitted"`: User already submitted for this pair
-- `"ShadeFX: result not declared yet"`: Result must be declared first
-- `"ShadeFX: not a winner"`: User is not a winner
-- `"ShadeFX: reward already claimed"`: Reward already claimed
-
----
-
-## Rate Limiting
-
-No rate limiting is implemented in the smart contract. Gas costs naturally limit transaction frequency.
+- `"ShadeFX: pair not active"`: Trading pair does not exist or is inactive
+- `"ShadeFX: collateral below minimum"`: Collateral below MIN_COLLATERAL (5 USDC)
+- `"ShadeFX: insufficient USDC balance"`: User doesn't have enough USDC
+- `"ShadeFX: invalid leverage"`: Leverage outside valid range
+- `"ShadeFX: insufficient liquidity"`: Not enough liquidity in pool
+- `"ShadeFX: price too stale"`: Price hasn't been updated recently
+- `"ShadeFX: position not open"`: Position is already closed
+- `"ShadeFX: not position owner"`: Caller is not the position owner
 
 ---
 
 ## Best Practices
 
-1. **Encryption**: Always encrypt predictions before submission
+1. **Encryption**: Always encrypt trade directions before submission
 2. **Validation**: Validate inputs on frontend before submission
 3. **Error Handling**: Handle all possible errors gracefully
 4. **Gas Estimation**: Estimate gas before sending transactions
 5. **Event Listening**: Listen to events for real-time updates
-6. **Deadline Awareness**: Check deadlines before submitting predictions
+6. **Price Checks**: Verify price is not stale before opening positions
+7. **Liquidation Awareness**: Monitor liquidation prices for open positions
 
 ---
 
 ## Examples
 
-### Complete Prediction Flow
+### Complete Trading Flow
 
 ```javascript
 // 1. Connect wallet
@@ -562,24 +516,62 @@ await connectWallet();
 // 2. Get contract instance
 const contract = getContract(signer);
 
-// 3. Encrypt prediction
-const predictionValue = 1.2345;
-const scaledValue = Math.floor(predictionValue * 10000); // 12345
-const encrypted = await fhevm.encrypt(scaledValue);
+// 3. Encrypt direction and leverage
+const encryptedDirection = await encryptBool(true); // Long
+const encryptedLeverage = await encrypt32(2); // 2x leverage
 
-// 4. Submit prediction
-const tx = await contract.submitPrediction("EURUSD", encrypted, {
-  value: ethers.parseEther("0.01")
-});
+// 4. Open position
+const tx = await contract.createMarketOrder(
+  "BTCUSD",
+  encryptedDirection.handles[0],
+  encryptedLeverage.handles[0],
+  encryptedDirection.inputProof,
+  encryptedLeverage.inputProof,
+  2,
+  ethers.parseUnits("10", 6) // 10 USDC
+);
 await tx.wait();
 
-// 5. Check winner status (after result declared)
-const isWinner = await contract.checkWinner("EURUSD", account);
+// 5. Get position info
+const position = await contract.positions(1);
 
-// 6. Claim reward (if winner)
-if (isWinner) {
-  const claimTx = await contract.claimReward("EURUSD");
-  await claimTx.wait();
+// 6. Close position (after decryption)
+const isLong = await decryptDirection(position.encryptedDirection);
+await contract.closePositionWithDirection(1, isLong);
+```
+
+---
+
+## GraphQL API (Envio Indexer)
+
+### Query Positions
+
+```graphql
+query GetPositions($trader: String!) {
+  positions(where: { trader: $trader, isOpen: true }) {
+    positionId
+    trader
+    pairKey
+    entryPrice
+    size
+    collateral
+    leverage
+    timestamp
+  }
 }
 ```
 
+### Query Orders
+
+```graphql
+query GetOrders($trader: String!) {
+  orders(where: { trader: $trader, status: PENDING }) {
+    orderId
+    pairKey
+    limitPrice
+    collateralAmount
+    leverage
+    timestamp
+  }
+}
+```

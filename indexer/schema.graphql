@@ -1,0 +1,78 @@
+# ShadeFX PerpDEX Indexer Schema
+# Only PerpDEX entities - old ShadeFX prediction market entities removed
+
+type UserStats @entity {
+  id: ID!  # User address (lowercase)
+  address: Bytes!
+  
+  # PerpDEX Statistics
+  totalPositions: BigInt!
+  openPositions: BigInt!
+  totalVolume: BigInt!  # Total trading volume in USDC
+  totalPerpPnL: BigInt!  # Total PnL from PerpDEX (can be negative)
+  totalOrders: BigInt!
+  lastUpdated: BigInt!
+  
+  # Points and Ranking (computed on frontend, stored here for consistency)
+  totalPoints: BigInt  # Total points earned (computed from volume, leverage, order type)
+  perpDexPoints: BigInt  # Points earned from PerpDEX only
+  rank: Int  # Global rank based on totalPoints
+  
+  # Relationships removed - using trader_id directly in Position/Order like Bagless
+}
+
+type CurrencyPair @entity {
+  id: ID!  # currencyPair key (e.g., "BTCUSD")
+  pairKey: String! @index
+  baseCurrency: String!
+  quoteCurrency: String!
+  isActive: Boolean! @index
+  createdAt: BigInt!
+  # Price information (optional - backward compatible)
+  currentPrice: BigInt  # PRICE_PRECISION scaled (1e8), null if not yet updated
+  lastUpdateTime: BigInt  # Unix timestamp, null if not yet updated
+  priceSource: String  # "binance", "pyth", "contract", null if not yet updated
+  positions: [Position!]! @derivedFrom(field: "pairKey")
+  orders: [Order!]! @derivedFrom(field: "pairKey")
+}
+
+# PerpDEX Entities
+type Position @entity {
+  id: ID!  # positionId
+  positionId: BigInt! @index
+  trader_id: String! @index  # Trader address (lowercase) - direct field like Bagless
+  pairKey: String! @index
+  entryPrice: BigInt!
+  exitPrice: BigInt
+  size: BigInt!
+  collateral: BigInt!
+  leverage: BigInt!
+  timestamp: BigInt! @index
+  closedAt: BigInt
+  isOpen: Boolean! @index
+  liquidationPrice: BigInt!
+  openingFee: BigInt!
+  closingFee: BigInt!
+      pnl: BigInt  # Can be negative, null if position is still open
+      pnlPercent: BigDecimal
+      stopLossPrice: BigInt  # Stop loss price (scaled by PRICE_PRECISION), null if not set
+      direction: String  # "long" or "short", null if not set (set by frontend via mutation)
+}
+
+type Order @entity {
+  id: ID!  # orderId
+  orderId: BigInt! @index
+  trader_id: String! @index  # Trader address (lowercase) - direct field like Bagless
+  pairKey: String! @index
+  orderType: Int!  # 0 = MARKET, 1 = LIMIT
+  status: Int! @index  # 0 = PENDING, 1 = EXECUTED, 2 = CANCELLED, 3 = EXPIRED
+  limitPrice: BigInt!
+  collateralAmount: BigInt!
+  leverage: BigInt!
+  timestamp: BigInt! @index
+  expiryTime: BigInt!
+      executedAt: BigInt
+      cancelledAt: BigInt
+      positionId: BigInt  # If executed, the resulting position ID
+      direction: String  # "long" or "short", null if not set (set by frontend via mutation)
+}

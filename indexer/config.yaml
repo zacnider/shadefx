@@ -1,0 +1,75 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: ShadeFXIndexerV2
+description: Index ShadeFX PerpDEX events for perpetual trading on Sepolia Testnet
+
+# Disable reorg handling during development to improve performance
+# Re-enable for production: rollback_on_reorg: true
+rollback_on_reorg: false
+
+contracts:
+  - name: ShadeFXPerpDEX
+    handler: src/PerpDEXEventHandlers.ts
+    events:
+      - event: "PositionOpened(uint256 indexed positionId, address indexed trader, string indexed pairKey, uint256 entryPrice, uint256 size, uint256 collateral, uint256 leverage, uint256 openingFee)"
+        field_selection:
+          transaction_fields:
+            - hash
+            - from
+      - event: "PositionClosed(uint256 indexed positionId, address indexed trader, string indexed pairKey, uint256 exitPrice, int256 pnl, uint256 collateralReturned, uint256 closingFee)"
+        field_selection:
+          transaction_fields:
+            - hash
+            - from
+      - event: "PositionLiquidated(uint256 indexed positionId, address indexed trader, string indexed pairKey, address liquidator, uint256 liquidationPrice)"
+        field_selection:
+          transaction_fields:
+            - hash
+            - from
+      - event: "OrderCreated(uint256 indexed orderId, address indexed trader, string indexed pairKey, uint8 orderType, uint256 limitPrice, uint256 collateralAmount, uint256 leverage)"
+        field_selection:
+          transaction_fields:
+            - hash
+            - from
+      - event: "OrderExecuted(uint256 indexed orderId, uint256 indexed positionId, address indexed trader, string pairKey, uint256 executionPrice)"
+        field_selection:
+          transaction_fields:
+            - hash
+            - from
+      - event: "OrderCancelled(uint256 indexed orderId, address indexed trader, string pairKey)"
+        field_selection:
+          transaction_fields:
+            - hash
+            - from
+      - event: "OrderExpired(uint256 indexed orderId, address indexed trader, string pairKey)"
+        field_selection:
+          transaction_fields:
+            - hash
+            - from
+      - event: "PairAdded(string indexed pairKey, string baseCurrency, string quoteCurrency, uint256 initialPrice)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "PriceUpdated(string indexed pairKey, uint256 oldPrice, uint256 newPrice, uint256 timestamp)"
+        field_selection:
+          transaction_fields:
+            - hash
+            - from
+      - event: "OpenInterestUpdated(uint256 indexed positionId, string indexed pairKey, bool isLong, uint256 positionSize)"
+        field_selection:
+          transaction_fields:
+            - hash
+            - from
+
+networks:
+  - id: 11155111  # Sepolia Testnet
+    # Using RPC instead of HyperSync for better reliability
+    rpc_config:
+      url: https://eth-sepolia.g.alchemy.com/v2/eCVrgP5q423Sh4pjL0MQG
+    # Starting from block 9600000 to catch all events (contract: 0x8394A0ddC9Ae5B3a0079a1e5799Fd7fBdbBf9532)
+    # Deployed at block 9681993 (after contract splitting: ShadeFXPerpDEX + ShadeFXPriceOracle)
+    start_block: 9600000
+    contracts:
+      - name: ShadeFXPerpDEX
+        address: "0x8394A0ddC9Ae5B3a0079a1e5799Fd7fBdbBf9532"
+        handler: ./src/PerpDEXEventHandlers.ts
+

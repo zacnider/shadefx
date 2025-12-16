@@ -117,6 +117,22 @@ npm start
 
 The frontend will be available at `http://localhost:3000`
 
+### 8. Connect Wallet
+
+1. Open `http://localhost:3000` in your browser
+2. Click "Connect Wallet" and select:
+   - **MetaMask**: For external wallet connection
+   - **Email**: For embedded wallet (automatic wallet creation)
+3. If using MetaMask with localhost:
+   - Add Hardhat network to MetaMask:
+     * **Network Name**: Hardhat Local
+     * **RPC URL**: `http://127.0.0.1:8545`
+     * **Chain ID**: `31337`
+     * **Currency Symbol**: `ETH`
+4. For Sepolia testnet:
+   - Ensure you're on Sepolia network
+   - Get test ETH and USDC from faucets
+
 ## 📖 Usage
 
 ### For Users
@@ -261,7 +277,7 @@ This project is part of the Zama Developer Program. Contributions are welcome!
 
 ## 📄 License
 
-BSD-3-Clause-Clear
+This project is licensed under the **BSD-3-Clause-Clear License**. See the [LICENSE](./LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -269,12 +285,94 @@ BSD-3-Clause-Clear
 - [FHEVM](https://github.com/zama-ai/fhevm) for the FHE virtual machine
 - [Hardhat](https://hardhat.org/) for the development framework
 
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### FHEVM Not Initialized
+
+**Problem**: FHEVM hook shows "FHEVM is initializing..." and never completes.
+
+**Solutions**:
+1. Check that you're connected to Sepolia testnet
+2. Ensure wallet is connected (MetaMask or embedded wallet)
+3. Refresh the page
+4. Check browser console for errors
+5. Verify Zama Gateway is accessible
+
+#### Transaction Fails with "Insufficient USDC"
+
+**Problem**: Transaction fails even though you have USDC.
+
+**Solutions**:
+1. Check USDC balance (must be at least 5 USDC)
+2. Ensure USDC is approved for contract spending
+3. Try approving USDC again
+4. Check that you're using Sepolia USDC (not mainnet)
+
+#### Position Not Opening
+
+**Problem**: Click "Open Position" but nothing happens.
+
+**Solutions**:
+1. Wait for FHEVM to initialize (check status indicator)
+2. Ensure all fields are filled (direction, leverage, collateral)
+3. Check browser console for errors
+4. Verify wallet is connected
+5. Check network connection
+
+#### Price Not Updating
+
+**Problem**: Price feed shows stale data.
+
+**Solutions**:
+1. Refresh the page
+2. Check backend service is running
+3. Verify price oracle contract is updated
+4. Check network connection
+
+#### MetaMask Connection Issues
+
+**Problem**: MetaMask doesn't connect or shows errors.
+
+**Solutions**:
+1. Clear MetaMask cache: Settings → Advanced → Reset Account
+2. Add Sepolia network manually if needed
+3. Ensure MetaMask extension is enabled
+4. Try disconnecting and reconnecting
+5. Restart browser if issues persist
+
+#### Embedded Wallet Not Working
+
+**Problem**: Embedded wallet (Privy) doesn't create wallet.
+
+**Solutions**:
+1. Check email verification
+2. Clear browser cache and cookies
+3. Try incognito mode
+4. Check Privy configuration
+5. Verify network connection
+
+### Getting Help
+
+If you encounter issues not listed here:
+
+1. **Check Documentation**: Review [FHEVM_INTEGRATION.md](./FHEVM_INTEGRATION.md) and [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+2. **GitHub Issues**: Open an issue on GitHub with:
+   - Error messages
+   - Steps to reproduce
+   - Browser/OS information
+   - Console logs
+3. **Zama Discord**: Ask in #developer-program channel
+4. **Email**: Contact project maintainers
+
 ## 📞 Support
 
 For questions or issues, please refer to:
-- Zama Developer Program: https://docs.zama.org/programs/developer-program
-- Zama Discord: #developer-program channel
-- GitHub Issues: [Create an issue](https://github.com/your-repo/issues)
+- **Live Demo**: https://shadefx.cc
+- **Zama Developer Program**: https://docs.zama.org/programs/developer-program
+- **Zama Discord**: #developer-program channel
+- **GitHub Issues**: [Create an issue](https://github.com/your-repo/issues)
 
 ---
 

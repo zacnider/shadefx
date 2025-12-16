@@ -156,17 +156,50 @@ The frontend will be available at `http://localhost:3000`
 
 ## 🧪 Testing
 
-Run the test suite:
+### Quick Start
 
+Run all tests:
 ```bash
 npm test
 ```
 
 Run tests with coverage:
-
 ```bash
-npm run test:coverage
+npm run coverage
 ```
+
+### Test Overview
+
+ShadeFX includes comprehensive FHEVM integration tests:
+
+- **FHEVM Integration Tests**: Tests encrypted position opening (Long/Short) with encrypted leverage
+- **Market Order Tests**: Tests immediate execution with FHEVM encryption
+- **Limit Order Tests**: Tests limit orders with encrypted directions
+- **Position Management**: Tests position closing, PnL calculation, and liquidation
+- **Admin Functions**: Tests fee setting, leverage limits, and pause functionality
+
+### Understanding FHEVM Tests
+
+Tests use Hardhat's FHEVM mock environment, which simulates FHEVM operations without requiring a real FHEVM network.
+
+**Example test flow:**
+1. User encrypts direction (Long/Short) and leverage using FHEVM
+2. Encrypted values are sent to the contract
+3. Contract processes encrypted values using FHEVM functions
+4. Position is created successfully
+
+**Run specific tests:**
+```bash
+# Run only FHEVM encryption tests
+npm test -- --grep "FHEVM Encryption"
+
+# Run only market order tests
+npm test -- --grep "Market Orders"
+```
+
+### Detailed Testing Guide
+
+For detailed testing instructions, see [TESTING.md](./TESTING.md).
 
 ## 📁 Project Structure
 
@@ -284,7 +317,10 @@ See [NETWORKS.md](./NETWORKS.md) for detailed network configuration and setup in
 - [Architecture Documentation](./docs/ARCHITECTURE.md)
 - [API Documentation](./docs/API.md)
 - [FHEVM Integration Guide](./FHEVM_INTEGRATION.md)
+- [Testing Guide](./TESTING.md)
+- [Deployment Guide](./DEPLOYMENT_GUIDE.md)
 - [Network Configuration](./NETWORKS.md)
+- [Zama FHE Usage](./ZAMA_FHE_USAGE.md)
 - [Zama Official Guide](./ZAMA_OFFICIAL_GUIDE.md)
 
 ## ⚠️ Important: Check Official Documentation

@@ -204,6 +204,38 @@ shadefx/
 - Emergency pause functionality
 - Safe token operations using SafeERC20
 
+## 🔒 FHEVM Integration Status
+
+**✅ FHEVM is fully integrated and operational in this project.**
+
+### Smart Contract Integration
+- **Fully Implemented**: All FHEVM functions are actively used:
+  - `FHE.fromExternal()` - Converts external encrypted values to internal encrypted types
+  - `FHE.allowThis()` - Allows contract to decrypt values
+  - `FHE.allow()` - Allows specific addresses to decrypt values
+  - `FHE.makePubliclyDecryptable()` - Makes values publicly decryptable (used after position opening)
+- **Encrypted Types Used**:
+  - `ebool` - Encrypted boolean for trade directions (Long/Short)
+  - `euint32` - Encrypted 32-bit integer for leverage
+  - `euint64` - Encrypted 64-bit integer for stop loss
+  - `externalEbool`, `externalEuint32`, `externalEuint64` - External encrypted types for function parameters
+
+### Frontend Integration
+- **Fully Implemented**: Encryption operations are fully functional:
+  - `encryptBool()` - Encrypts boolean values (trade directions)
+  - `encrypt()` / `encrypt32()` - Encrypts numeric values (leverage)
+  - Uses `@zama-fhe/relayer-sdk` for all encryption operations
+  - Connects to Zama Gateway via relayer for FHE operations
+
+### How It Works
+1. **User selects trade direction** (Long/Short) and leverage in the frontend
+2. **Frontend encrypts** the direction and leverage using FHEVM Relayer SDK
+3. **Encrypted values are sent** to the smart contract as `externalEbool` and `externalEuint32`
+4. **Contract processes** encrypted values using FHEVM library functions
+5. **After position opening**, values are made publicly decryptable for transparency and liquidation purposes
+
+**Note**: The `decrypt()` function in the frontend is not used because the contract uses `makePubliclyDecryptable()` to handle decryption on-chain. This is the correct approach for this use case.
+
 ## 📝 Smart Contract Functions
 
 ### User Functions

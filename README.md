@@ -1,77 +1,48 @@
-# ShadeFX - Confidential Perpetual DEX
+# ShadeFX - Confidential Cross-Rate Predictor
 
-A decentralized perpetual futures exchange built on Ethereum Sepolia with **Fully Homomorphic Encryption (FHE)** privacy features. ShadeFX enables users to trade perpetual futures with encrypted position data, ensuring complete privacy for trading strategies and positions.
+ShadeFX is a decentralized application (dApp) that allows users to make encrypted currency rate predictions using Fully Homomorphic Encryption (FHE) via FHEVM. Users submit encrypted predictions, and only winners are revealed when results are declared.
 
-## 🌟 Features
+## 🎯 Project Overview
 
-- **Confidential Trading**: Positions, leverage, and stop-loss orders are encrypted using FHEVM (Fully Homomorphic Encryption Virtual Machine)
-- **Perpetual Futures**: Trade long/short positions on cryptocurrency pairs with up to 5x leverage
-- **Real-time Price Feeds**: Integrated with Pyth Network and Binance API for accurate price updates
-- **Limit Orders**: Place limit orders with encrypted direction and price conditions
-- **Liquidation System**: Automated liquidation mechanism with maintenance margin requirements
-- **Open Interest Tracking**: Real-time tracking of total open interest per pair
-- **Modern Frontend**: React-based UI with real-time charts and order book visualization
-- **Automated Backend**: Price updater services and limit order executor
+ShadeFX enables users to:
+- Submit encrypted currency rate predictions using FHEVM
+- Keep predictions private until results are declared
+- Only reveal correct predictions when results are announced
+- Claim rewards if their predictions are correct
+
+## 🔒 Key Features
+
+- **Fully Encrypted Predictions**: All predictions are encrypted using FHEVM before submission
+- **Privacy-Preserving**: Predictions remain private until results are declared
+- **Winner Reveal**: Only correct predictions are revealed when results are declared
+- **Reward Pool**: Winners share the reward pool proportionally
+- **Multiple Currency Pairs**: Support for various currency pairs (EUR/USD, GBP/JPY, etc.)
 
 ## 🏗️ Architecture
 
-The project consists of three main components:
-
-1. **Smart Contracts** (`contracts/`): Solidity contracts deployed on Sepolia testnet
-   - `ShadeFXPerpDEX.sol`: Main perpetual DEX contract with FHE privacy
-   - `ShadeFXPriceOracle.sol`: Price oracle contract for price feeds
-   - `PythPriceConverter.sol`: Pyth Network price converter
-
-2. **Frontend** (`frontend/`): React application with TypeScript
-   - Real-time price charts
-   - Position management
-   - Order book visualization
-   - Wallet integration (MetaMask, Privy)
-
-3. **Backend** (`backend/`): Node.js/TypeScript services
-   - Binance price updater
-   - Pyth Network price updater
-   - Limit order executor
-   - GraphQL indexer integration
-
-## 🛠️ Technology Stack
-
-### Smart Contracts
-- **Solidity** ^0.8.27
-- **FHEVM** (Zama Network) for encrypted computations
-- **OpenZeppelin** for security patterns
-- **Pyth Network** for price feeds
-- **Hardhat** for development and deployment
+### Smart Contract
+- **ShadeFXPerpDEX.sol**: Main perpetual exchange contract handling encrypted positions, leverage trading, and order management
+- Built with Solidity 0.8.27 and FHEVM
+- Uses `ebool` for encrypted trade directions (Long/Short) and `euint32` for encrypted leverage
+- Implements access control, reentrancy protection, and secure position management
+- **ShadeFXPriceOracle.sol**: Separate price oracle contract for price management and pair configuration
 
 ### Frontend
-- **React** 18.2
-- **TypeScript**
-- **Wagmi** & **Viem** for Ethereum interactions
-- **RainbowKit** for wallet connection
-- **Privy** for authentication
-- **TailwindCSS** for styling
-- **Lightweight Charts** for price visualization
-
-### Backend
-- **Node.js** with **TypeScript**
-- **Ethers.js** v6 for blockchain interactions
-- **Express** for API server
-- **Axios** for HTTP requests
-- **PM2** for process management
+- **React + TypeScript**: Modern frontend framework
+- **FHEVM Relayer SDK**: For encryption/decryption operations
+- **Ethers.js**: For blockchain interactions
+- **MetaMask Integration**: Wallet connection and transaction signing
 
 ## 📋 Prerequisites
 
-Before you begin, ensure you have the following installed:
+- Node.js 18+ and npm
+- MetaMask browser extension
+- Hardhat for smart contract development
+- FHEVM-compatible network (testnet or local)
+- FHEVM Solidity library (`fhevm` package)
+- FHEVM JavaScript library (`fhevmjs` package)
 
-- **Node.js** >= 18.x
-- **npm** >= 9.x or **yarn**
-- **Git**
-- **MetaMask** or compatible Web3 wallet
-- **Alchemy** or **Infura** account (for RPC endpoint)
-- **CoinGecko API** key (optional, for additional price data)
-- **Pyth Network** access (for price feeds)
-
-## 🚀 Installation
+## 🚀 Getting Started
 
 ### 1. Clone the Repository
 
@@ -80,161 +51,63 @@ git clone <repository-url>
 cd shadefx
 ```
 
-### 2. Install Root Dependencies
+### 2. Install Dependencies
 
+#### Backend (Smart Contracts)
 ```bash
 npm install
 ```
 
-### 3. Setup Environment Variables
-
-#### Backend Environment
-
-Create `backend/.env` file:
-
-```bash
-cd backend
-cp env.example .env
-```
-
-Edit `.env` and add your configuration:
-
-```env
-# Wallet Configuration
-PRIVATE_KEY=your_private_key_here
-
-# Network Configuration
-RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your_alchemy_api_key_here
-SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your_alchemy_api_key_here
-CHAIN_ID=11155111
-
-# Contract Addresses
-CONTRACT_ADDRESS=0x8394A0ddC9Ae5B3a0079a1e5799Fd7fBdbBf9532
-PRICE_ORACLE_CONTRACT_ADDRESS=0x92Fb1C6cc98C837068B661f84864fCcC0CE07d93
-PERPDEX_CONTRACT_ADDRESS=0x8394A0ddC9Ae5B3a0079a1e5799Fd7fBdbBf9532
-
-# API Configuration
-API_PORT=3002
-
-# CoinGecko API Key (for backend price fetching)
-COINGECKO_API_KEY=your_coingecko_api_key_here
-
-# Indexer Configuration
-INDEXER_GRAPHQL_URL=http://localhost:8080/v1/graphql
-HASURA_ADMIN_SECRET=your_hasura_admin_secret_here
-
-# Update Intervals (in milliseconds)
-BINANCE_UPDATE_INTERVAL=30000
-PYTH_UPDATE_INTERVAL=30000
-LIMIT_ORDER_EXECUTION_INTERVAL=30000
-
-# Logging
-LOG_LEVEL=info
-```
-
-#### Frontend Environment
-
-Create `frontend/.env` file:
-
+#### Frontend
 ```bash
 cd frontend
-cp env.example .env
+npm install
 ```
 
-Edit `.env` and add your configuration:
+### 3. Configure Environment Variables
+
+Create a `.env` file in the root directory:
 
 ```env
-# React App Environment Variables
-# Note: All React environment variables must start with REACT_APP_
+PRIVATE_KEY=your_private_key_here
+SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/your_infura_key
+ETHERSCAN_API_KEY=your_etherscan_api_key
+FHEVM_RELAYER_URL=http://localhost:8545
+```
 
-# Network Configuration
-REACT_APP_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your_alchemy_api_key_here
-REACT_APP_CHAIN_ID=11155111
+For frontend, create a `.env` file in the `frontend` directory:
 
-# Contract Addresses
-REACT_APP_CONTRACT_ADDRESS=0x8394A0ddC9Ae5B3a0079a1e5799Fd7fBdbBf9532
-REACT_APP_PRICE_ORACLE_CONTRACT_ADDRESS=0x92Fb1C6cc98C837068B661f84864fCcC0CE07d93
-
-# API Keys
-REACT_APP_COINGECKO_API_KEY=your_coingecko_api_key_here
-REACT_APP_FXRATES_API_KEY=your_fxrates_api_key_here
-
-# Indexer Configuration
-REACT_APP_INDEXER_GRAPHQL_URL=http://localhost:8080/v1/graphql
+```env
+REACT_APP_CONTRACT_ADDRESS=your_deployed_contract_address
+REACT_APP_FHEVM_RELAYER_URL=http://localhost:8545
 ```
 
 ### 4. Compile Smart Contracts
 
 ```bash
-# From root directory
 npm run compile
 ```
 
-This will:
-- Compile Solidity contracts
-- Generate TypeScript types in `types/` directory
-- Create contract artifacts in `artifacts/`
-
-### 5. Install Frontend Dependencies
+### 5. Run Tests
 
 ```bash
-cd frontend
-npm install
+npm test
 ```
 
-### 6. Install Backend Dependencies
+### 6. Deploy Contracts
 
+#### Local Network
 ```bash
-cd backend
-npm install
+npx hardhat node
+npm run deploy:localhost
 ```
 
-## 🏃 Running the Application
-
-### Start Local Hardhat Node (Optional)
-
-For local development:
-
+#### Sepolia Testnet
 ```bash
-npm run chain
-```
-
-### Deploy Contracts (Sepolia Testnet)
-
-```bash
-# Deploy to Sepolia
 npm run deploy:sepolia
 ```
 
-### Start Backend Services
-
-#### Price Updater Service
-
-```bash
-cd backend
-npm run start
-# or for development with auto-reload
-npm run dev
-```
-
-#### Limit Order Executor Service
-
-```bash
-cd backend
-npm run start:executor
-# or for development
-npm run dev:executor
-```
-
-#### Production Mode (with PM2)
-
-```bash
-cd backend
-npm run build
-pm2 start ecosystem.config.js
-```
-
-### Start Frontend
+### 7. Start Frontend
 
 ```bash
 cd frontend
@@ -243,234 +116,165 @@ npm start
 
 The frontend will be available at `http://localhost:3000`
 
-## 📝 Available Scripts
+## 📖 Usage
 
-### Root Directory
+### For Users
+
+1. **Connect Wallet**: Click "Connect Wallet" and approve the MetaMask connection
+2. **Make a Prediction**: 
+   - Select a currency pair
+   - Enter your prediction rate (e.g., 1.2345 for EUR/USD)
+   - Set your stake amount (minimum 0.01 ETH)
+   - Submit your encrypted prediction
+3. **View Results**: After the prediction deadline, check if you're a winner
+4. **Claim Rewards**: If you're a winner, claim your share of the reward pool
+
+### For Contract Owner
+
+1. **Create Currency Pair**: Deploy a new currency pair round
+2. **Declare Results**: After the prediction deadline, declare the real exchange rate
+3. **Reveal Winners**: Mark winners based on encrypted comparisons
+4. **Manage Settings**: Update minimum stake amount and fee percentage
+
+## 🧪 Testing
+
+Run the test suite:
 
 ```bash
-# Compile contracts
-npm run compile
-
-# Run tests
 npm test
-
-# Deploy to Sepolia
-npm run deploy:sepolia
-
-# Add currency pair
-npm run add-pair
-
-# Update prices from Pyth
-npm run update-prices
-
-# Type checking and linting
-npm run lint
-npm run prettier:check
 ```
 
-### Backend Scripts
+Run tests with coverage:
 
 ```bash
-# Start price updater
-npm run start
-
-# Start limit order executor
-npm run start:executor
-
-# Build TypeScript
-npm run build
-
-# Development mode with auto-reload
-npm run dev
-npm run dev:executor
+npm run test:coverage
 ```
 
-### Frontend Scripts
+## 📁 Project Structure
 
-```bash
-# Start development server
-npm start
-
-# Build for production
-npm run build
-
-# Run tests
-npm test
+```
+shadefx/
+├── contracts/
+│   ├── ShadeFXPerpDEX.sol   # Main perpetual exchange contract
+│   ├── ShadeFXPriceOracle.sol # Price oracle contract
+│   ├── IShadeFXPriceOracle.sol # Price oracle interface
+│   └── MockERC20.sol        # Mock ERC20 for testing
+├── test/
+│   ├── ShadeFX.test.ts      # Legacy test suite
+│   └── ShadeFXPerpDEX.test.ts # FHEVM integration tests
+├── scripts/
+│   └── deploy.ts            # Deployment script
+├── frontend/
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── contexts/        # React contexts
+│   │   ├── hooks/           # Custom hooks
+│   │   ├── pages/           # Page components
+│   │   └── utils/           # Utility functions
+│   └── public/              # Static assets
+├── hardhat.config.ts        # Hardhat configuration
+├── package.json             # Dependencies
+└── README.md                # This file
 ```
 
 ## 🔐 Security Considerations
 
-### Environment Variables
+- All predictions are encrypted using FHEVM before submission
+- Only contract owner can declare results
+- Winners are revealed only after result declaration
+- Secure reward distribution with fee mechanism
+- Reentrancy protection implemented
+- Access control for admin functions
 
-⚠️ **Never commit `.env` files to version control!**
+## 📝 Smart Contract Functions
 
-- All sensitive keys are stored in `.env` files
-- `.env` files are already in `.gitignore`
-- Use `.env.example` files as templates
+### User Functions
+- `createMarketOrder(pairKey, encryptedDirection, encryptedLeverage, ...)`: Open a position with encrypted direction and leverage
+- `createLimitOrder(pairKey, encryptedDirection, limitPrice, ...)`: Create a limit order with encrypted direction
+- `closePositionWithDirection(positionId, isLong)`: Close a position with decrypted direction
+- `cancelOrder(orderId)`: Cancel a pending limit order
+- `getUserPositions(user)`: Get all positions for a user
+- `getUserPairPositions(pairKey, user)`: Get positions for a specific pair
 
-### Private Keys
+### Admin Functions
+- `setOpeningFeeBP(feeBP)`: Set opening fee in basis points
+- `setClosingFeeBP(feeBP)`: Set closing fee in basis points
+- `setMaxLeverage(leverage)`: Set maximum leverage
+- `pause()` / `unpause()`: Emergency pause functionality
 
-- Use a dedicated wallet for backend services
-- Never use your main wallet's private key
-- Consider using hardware wallets for production
+## 🌐 Network Support
 
-### API Keys
+ShadeFX requires **FHEVM-compatible networks**. Supported networks:
 
-- Rotate API keys regularly
-- Use separate keys for development and production
-- Monitor API usage to detect unauthorized access
+### Recommended Networks
 
-## 🧪 Testing
+1. **Fhenix Helium Testnet** (Recommended for FHEVM)
+   - Chain ID: 8008135
+   - RPC URL: `https://api.helium.fhenix.zone`
+   - Explorer: `https://explorer.helium.fhenix.zone`
+   - Use Case: FHEVM testing and development
+   - Deploy: `npm run deploy:fhenix`
 
-### Run Contract Tests
+2. **Localhost** (Development)
+   - Chain ID: 1337
+   - RPC URL: `http://127.0.0.1:8545`
+   - Use Case: Local development and testing
+   - Deploy: `npm run deploy:localhost`
 
-```bash
-npm test
-```
+3. **Sepolia** (Ethereum Testnet)
+   - Chain ID: 11155111
+   - RPC URL: `https://sepolia.infura.io/v3/YOUR_KEY`
+   - Use Case: Standard Ethereum testing
+   - Note: May not support FHEVM natively
+   - Deploy: `npm run deploy:sepolia`
 
-### Run Tests on Sepolia
+### Network Configuration
 
-```bash
-npm run test:sepolia
-```
+See [NETWORKS.md](./NETWORKS.md) for detailed network configuration and setup instructions.
 
-### Coverage Report
+**Important**: FHEVM requires a compatible network with FHEVM contract deployed at `0x0000000000000000000000000000000000000044`.
 
-```bash
-npm run coverage
-```
+## 📚 Documentation
 
-## 📦 Deployment
+- [Architecture Documentation](./docs/ARCHITECTURE.md)
+- [API Documentation](./docs/API.md)
+- [FHEVM Integration Guide](./FHEVM_INTEGRATION.md)
+- [Network Configuration](./NETWORKS.md)
+- [Zama Official Guide](./ZAMA_OFFICIAL_GUIDE.md)
 
-### Contract Deployment
+## ⚠️ Important: Check Official Documentation
 
-1. Ensure you have Sepolia ETH in your wallet
-2. Set up environment variables in `backend/.env`
-3. Deploy contracts:
+**Always verify information with Zama's official documentation:**
 
-```bash
-npm run deploy:sepolia
-```
+- **FHEVM Documentation**: https://docs.zama.ai/fhevm
+- **FHEVM Hardhat Template**: https://github.com/zama-ai/fhevm-hardhat-template
+- **Relayer SDK**: https://github.com/zama-ai/relayer-sdk
+- **Zama Community**: https://community.zama.org
 
-4. Verify contracts on Etherscan:
-
-```bash
-npm run verify:sepolia
-```
-
-### Frontend Deployment
-
-Build the frontend:
-
-```bash
-cd frontend
-npm run build
-```
-
-Deploy the `build/` directory to your hosting service (Vercel, Netlify, etc.)
-
-### Backend Deployment
-
-1. Build the backend:
-
-```bash
-cd backend
-npm run build
-```
-
-2. Use PM2 for production:
-
-```bash
-pm2 start ecosystem.config.js
-pm2 save
-pm2 startup
-```
-
-## 🏛️ Contract Architecture
-
-### Main Contracts
-
-- **ShadeFXPerpDEX**: Main perpetual DEX contract
-  - Position management (open/close)
-  - Encrypted position data (FHE)
-  - Leverage (1-5x)
-  - Liquidation system
-  - Limit orders
-
-- **ShadeFXPriceOracle**: Price oracle contract
-  - Price updates from Pyth Network
-  - Price deviation checks
-  - Price staleness validation
-
-- **PythPriceConverter**: Pyth Network integration
-  - Price feed conversion
-  - Price ID mapping
-
-### Key Features
-
-- **Encrypted Positions**: Position direction, leverage, and stop-loss are encrypted using FHEVM
-- **Leverage**: Up to 5x leverage (configurable)
-- **Maintenance Margin**: 20% maintenance margin requirement
-- **Liquidation Bonus**: 5% bonus for liquidators
-- **Price Precision**: 8 decimal places (1e8)
-- **Max Price Deviation**: 5% maximum deviation from oracle price
-
-## 🔄 Price Update System
-
-The system supports multiple price feed sources:
-
-1. **Pyth Network**: Primary price feed (recommended)
-2. **Binance API**: Secondary price feed
-3. **CoinGecko API**: Fallback price feed
-
-Backend services automatically update prices every 30 seconds.
-
-## 📊 Indexer Integration
-
-The project includes a GraphQL indexer (Envio) for querying on-chain events:
-
-- Position opened/closed events
-- Order created/executed/cancelled events
-- Price update events
-- Pair addition events
-
-Set up the indexer separately and configure `INDEXER_GRAPHQL_URL` in your environment variables.
+Package names, versions, import paths, and network information may change. Always check the official sources.
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-
-- Use Prettier for code formatting
-- Follow ESLint rules
-- Write tests for new features
-- Update documentation as needed
+This project is part of the Zama Developer Program. Contributions are welcome!
 
 ## 📄 License
 
-This project is licensed under the **BSD-3-Clause-Clear** License.
+BSD-3-Clause-Clear
 
-## 🔗 Links
+## 🙏 Acknowledgments
 
-- **Zama Network**: https://www.zama.ai/
-- **FHEVM Documentation**: https://docs.zama.ai/fhevm
-- **Pyth Network**: https://pyth.network/
-- **Hardhat**: https://hardhat.org/
-
-## ⚠️ Disclaimer
-
-This is experimental software. Use at your own risk. The contracts are deployed on Sepolia testnet for testing purposes only.
+- [Zama](https://www.zama.ai/) for FHEVM technology
+- [FHEVM](https://github.com/zama-ai/fhevm) for the FHE virtual machine
+- [Hardhat](https://hardhat.org/) for the development framework
 
 ## 📞 Support
 
-For issues and questions:
-- Open an issue on GitHub
-- Check the documentation in `docs/` directory
-- Review contract comments in `contracts/` directory
+For questions or issues, please refer to:
+- Zama Developer Program: https://docs.zama.org/programs/developer-program
+- Zama Discord: #developer-program channel
+- GitHub Issues: [Create an issue](https://github.com/your-repo/issues)
 
 ---
+
+**Note**: This project is in BETA. Terms and features may change based on feedback.
+

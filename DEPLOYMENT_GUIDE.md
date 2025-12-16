@@ -43,21 +43,51 @@ This command:
 
 ## 🧪 Testing
 
+**Important**: Always run tests before deploying to ensure everything works correctly.
+
 ### Test on Localhost
 
 ```bash
-# Terminal 1: Start Hardhat node
+# Terminal 1: Start Hardhat node (optional, tests can run without it)
 npm run chain
 
 # Terminal 2: Run tests
 npm test
 ```
 
+**What tests verify:**
+- ✅ Contract deployment works correctly
+- ✅ FHEVM encryption/decryption functions properly
+- ✅ Market orders with encrypted direction and leverage
+- ✅ Limit orders with encrypted direction
+- ✅ Position management (open, close, liquidate)
+- ✅ Admin functions (fees, leverage, pause)
+
+### Test Coverage
+
+Generate detailed coverage report:
+```bash
+npm run coverage
+```
+
+This generates:
+- HTML coverage report in `coverage/lcov-report/index.html`
+- JSON coverage data in `coverage/coverage.json`
+
 ### Test on Sepolia
 
 ```bash
 npm run test:sepolia
 ```
+
+**Note**: Sepolia tests require:
+- Sepolia RPC URL configured in `.env`
+- Testnet tokens for gas fees
+- FHEVM support on Sepolia network
+
+### Detailed Testing Guide
+
+For comprehensive testing instructions, see [TESTING.md](./TESTING.md).
 
 ## 📦 Deployment Operations
 

@@ -1,0 +1,30 @@
+{
+  "name": "shadefx-indexer",
+  "version": "1.0.0",
+  "description": "Envio indexer for ShadeFX confidential predictions",
+  "scripts": {
+    "codegen": "envio codegen",
+    "dev": "envio dev",
+    "start": "envio start",
+    "stop": "envio stop",
+    "status": "envio status",
+    "logs": "envio logs"
+  },
+  "keywords": [
+    "envio",
+    "indexer",
+    "blockchain",
+    "fhevm",
+    "shadefx"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bignumber.js": "^9.3.1",
+    "envio": "^2.31.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  }
+}
+

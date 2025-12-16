@@ -79,24 +79,29 @@ Frontend will be available at `http://localhost:3000`
 
 ### FHEVM Integration
 
-⚠️ **Important**: The current FHEVM integration uses placeholder implementations. You need to:
+✅ **FHEVM is fully integrated and operational in this project.**
 
-1. **Install FHEVM SDK**: Follow [FHEVM documentation](https://docs.zama.org/protocol) for proper SDK installation
-2. **Update Smart Contract**: Ensure correct FHEVM imports and types
-3. **Update Frontend**: Replace placeholder FHEVM hook with actual SDK integration
-4. **Configure Relayer**: Set up FHEVM relayer service
+- **Smart Contract**: Uses `@fhevm/solidity` package with full FHEVM support
+  - `FHE.fromExternal()` - Converts external encrypted values to internal
+  - `FHE.allowThis()` - Allows contract to decrypt values
+  - `FHE.allow()` - Allows specific addresses to decrypt values
+  - `FHE.makePubliclyDecryptable()` - Makes values publicly decryptable
+- **Frontend**: Uses `@zama-fhe/relayer-sdk` for encryption operations
+  - `encryptBool()` - Encrypts boolean values (trade directions)
+  - `encrypt()` / `encrypt32()` - Encrypts numeric values (leverage)
+- **Network**: Deployed on Sepolia testnet with FHEVM support
 
 ### Smart Contract Notes
 
-- The contract uses `@fhevm/solidity` package - ensure it's properly installed
-- FHEVM types (`euint32`, `inEuint32`) may need adjustment based on your FHEVM version
-- Test with FHEVM-compatible network before mainnet deployment
+- The contract uses `@fhevm/solidity` package - properly installed and configured
+- FHEVM types (`ebool`, `euint32`, `externalEbool`, `externalEuint32`) are correctly used
+- Tested on Sepolia testnet with FHEVM support
 
 ### Frontend Notes
 
-- FHEVM Relayer SDK integration is placeholder - replace with actual SDK
-- Contract ABI may need updates after contract compilation
-- Ensure MetaMask is configured for the correct network
+- FHEVM Relayer SDK integration is fully functional
+- Contract ABI is up to date after contract compilation
+- MetaMask configured for Sepolia testnet
 
 ## Next Steps
 

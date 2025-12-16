@@ -1,20 +1,20 @@
-# ShadeFX Deployment Guide
+# ShadeFX PerpDEX Deployment Guide
 
-## 🚀 Deploy Etme Rehberi
+## 🚀 Deployment Guide
 
-Bu rehber, ShadeFX kontratlarını deploy etmek için gerekli tüm adımları içerir.
+This guide contains all the steps required to deploy ShadeFX PerpDEX contracts.
 
-## 📋 Ön Hazırlık
+## 📋 Prerequisites
 
-### 1. Bağımlılıkları Kurun
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Environment Variables Ayarlayın
+### 2. Set Up Environment Variables
 
-`.env` dosyası oluşturun:
+Create a `.env` file:
 
 ```env
 # Private key for deployment (without 0x prefix)
@@ -34,178 +34,260 @@ ETHERSCAN_API_KEY=your_etherscan_api_key
 MNEMONIC=test test test test test test test test test test test junk
 ```
 
-### 3. Kontratları Compile Edin
+### 3. Compile Contracts
 
 ```bash
 npm run compile
 ```
 
-Bu komut:
-- Kontratları compile eder
-- TypeChain type'larını oluşturur
-- Artifacts'ları oluşturur
+This command:
+- Compiles the contracts
+- Generates TypeChain types
+- Creates artifacts
 
-## 🧪 Test Edin
+## 🧪 Testing
 
-### Localhost'ta Test
+### Test on Localhost
 
 ```bash
-# Terminal 1: Hardhat node başlat
+# Terminal 1: Start Hardhat node
 npm run chain
 
-# Terminal 2: Testleri çalıştır
+# Terminal 2: Run tests
 npm test
 ```
 
-### Sepolia'da Test
+### Test on Sepolia
 
 ```bash
 npm run test:sepolia
 ```
 
-## 📦 Deploy İşlemleri
+## 📦 Deployment Operations
 
-### 1. Localhost'a Deploy
+### Overview
+
+ShadeFX PerpDEX consists of two contracts that must be deployed in order:
+
+1. **ShadeFXPriceOracle** - Price management and pair configuration
+2. **ShadeFXPerpDEX** - Position, order, and liquidity management
+
+**Important:** The Price Oracle must be deployed first, as PerpDEX depends on it.
+
+### 1. Deploy to Localhost
 
 ```bash
-# Terminal 1: Hardhat node başlat
+# Terminal 1: Start Hardhat node
 npm run chain
 
-# Terminal 2: Deploy et
+# Terminal 2: Deploy both contracts
 npm run deploy:localhost
 ```
 
-**Çıktı:**
+Or deploy individually:
+
+```bash
+# Deploy Price Oracle first
+npx hardhat deploy --network localhost --tags ShadeFXPriceOracle
+
+# Then deploy PerpDEX
+npx hardhat deploy --network localhost --tags ShadeFXPerpDEX
+```
+
+**Expected Output:**
 ```
 === Deployment Summary ===
-Contract Name: ShadeFX
+Contract Name: ShadeFXPriceOracle
 Contract Address: 0x...
 Deployer: 0x...
 Network: localhost
 Chain ID: 31337
-Min Stake Amount: 10000000000000000
-Reward Fee Percentage: 5%
+
+=== Deployment Summary ===
+Contract Name: ShadeFXPerpDEX
+Contract Address: 0x...
+Price Oracle Address: 0x...
+Deployer: 0x...
+Network: localhost
+Chain ID: 31337
 
 === Deployment Info (for frontend .env) ===
-REACT_APP_CONTRACT_ADDRESS=0x...
+REACT_APP_PERPDEX_CONTRACT_ADDRESS=0x...
+REACT_APP_PRICE_ORACLE_CONTRACT_ADDRESS=0x...
 REACT_APP_NETWORK=localhost
 REACT_APP_CHAIN_ID=31337
 ```
 
-### 2. Sepolia Testnet'e Deploy
+### 2. Deploy to Sepolia Testnet
 
 ```bash
 npm run deploy:sepolia
 ```
 
-**Gereksinimler:**
-- `.env` dosyasında `PRIVATE_KEY` ve `SEPOLIA_RPC_URL` ayarlı olmalı
-- Sepolia testnet token'larınız olmalı
+Or deploy individually:
 
-### 3. Fhenix Helium Testnet'e Deploy
+```bash
+# Deploy Price Oracle first
+npx hardhat deploy --network sepolia --tags ShadeFXPriceOracle
+
+# Then deploy PerpDEX
+npx hardhat deploy --network sepolia --tags ShadeFXPerpDEX
+```
+
+**Requirements:**
+- `PRIVATE_KEY` and `SEPOLIA_RPC_URL` must be set in `.env` file
+- You must have Sepolia testnet tokens
+
+### 3. Deploy to Fhenix Helium Testnet
 
 ```bash
 npm run deploy:fhenix
 ```
 
-**Gereksinimler:**
-- `.env` dosyasında `PRIVATE_KEY` ve `FHENIX_RPC_URL` ayarlı olmalı
-- Fhenix testnet token'larınız olmalı
+**Requirements:**
+- `PRIVATE_KEY` and `FHENIX_RPC_URL` must be set in `.env` file
+- You must have Fhenix testnet tokens
 
-## 🔧 Deploy Sonrası İşlemler
+## 🔧 Post-Deployment Operations
 
-### 1. Currency Pair Oluşturma
+### 1. Add Currency Pairs
 
-Deploy sonrası otomatik olarak currency pair oluşturulur (opsiyonel). Manuel oluşturmak için:
+After deployment, you need to add trading pairs to the Price Oracle:
 
 ```bash
-# Environment variables ayarlayın
-export CONTRACT_ADDRESS=0x...your_contract_address
-export CURRENCY_PAIR_KEY=EURUSD
-export BASE_CURRENCY=EUR
+# Set environment variables
+export CONTRACT_ADDRESS=0x...your_oracle_address
+export CURRENCY_PAIR_KEY=BTCUSD
+export BASE_CURRENCY=BTC
 export QUOTE_CURRENCY=USD
 
-# Script çalıştırın
-npx hardhat run scripts/createPair.ts --network localhost
+# Run the script
+npx hardhat run scripts/addCurrencyPair.ts --network sepolia
 ```
 
-### 2. Contract Verification (Sepolia)
+Or add multiple pairs at once:
 
 ```bash
-npm run verify:sepolia <CONTRACT_ADDRESS> "10000000000000000" "5"
+npm run add-all-pairs
 ```
 
-**Gereksinimler:**
-- `.env` dosyasında `ETHERSCAN_API_KEY` ayarlı olmalı
+### 2. Update Prices
 
-### 3. Frontend'i Güncelleyin
+After adding pairs, update prices from Pyth Network:
 
-Deploy sonrası, frontend `.env` dosyasını güncelleyin:
+```bash
+npm run update-prices
+```
+
+Or set up automatic price updates:
+
+```bash
+npm run auto-update-prices:continuous
+```
+
+### 3. Contract Verification (Sepolia)
+
+Verify the Price Oracle:
+
+```bash
+npx hardhat verify --network sepolia <ORACLE_ADDRESS> \
+  "0x0000000000000000000000000000000000000000" \
+  false \
+  "0xDd24F84d36BF92C65F92307595335bdFab5Bbd21" \
+  true \
+  <OWNER_ADDRESS>
+```
+
+Verify PerpDEX:
+
+```bash
+npx hardhat verify --network sepolia <PERPDEX_ADDRESS> \
+  <ORACLE_ADDRESS> \
+  <OWNER_ADDRESS>
+```
+
+**Requirements:**
+- `ETHERSCAN_API_KEY` must be set in `.env` file
+
+### 4. Update Frontend
+
+After deployment, update the frontend `.env` file:
 
 ```env
-REACT_APP_CONTRACT_ADDRESS=0x...your_deployed_contract_address
-REACT_APP_NETWORK=localhost  # veya sepolia, fhenix
-REACT_APP_CHAIN_ID=31337     # veya 11155111, 8008135
+REACT_APP_PERPDEX_CONTRACT_ADDRESS=0x...your_deployed_perpdex_address
+REACT_APP_PRICE_ORACLE_CONTRACT_ADDRESS=0x...your_deployed_oracle_address
+REACT_APP_NETWORK=localhost  # or sepolia, fhenix
+REACT_APP_CHAIN_ID=31337     # or 11155111, 8008135
 ```
 
 ## 📝 Deployment Scripts
 
-### deploy/001_deploy_shadefx.ts
+### deploy/003_deploy_price_oracle.ts
 
-Ana ShadeFX kontratını deploy eder.
+Deploys the ShadeFXPriceOracle contract.
 
-**Parametreler:**
-- `minStakeAmount`: 0.01 ETH (10000000000000000 wei)
-- `rewardFeePercentage`: 5%
+**Constructor Parameters:**
+- `_oracleAddress`: Legacy oracle address (ZeroAddress)
+- `_useChainlinkOracle`: false
+- `_pythOracleAddress`: `0xDd24F84d36BF92C65F92307595335bdFab5Bbd21` (Sepolia Pyth)
+- `_usePythOracle`: true
+- `initialOwner`: Deployer address
 
-### deploy/002_create_currency_pair.ts
+### deploy/003_deploy_perpdex.ts
 
-İlk currency pair'i oluşturur (opsiyonel).
+Deploys the ShadeFXPerpDEX contract.
 
-**Environment Variables:**
-- `CURRENCY_PAIR_KEY`: Currency pair key (default: "EURUSD")
-- `BASE_CURRENCY`: Base currency (default: "EUR")
-- `QUOTE_CURRENCY`: Quote currency (default: "USD")
+**Constructor Parameters:**
+- `_priceOracleAddress`: Deployed oracle address (from previous step)
+- `initialOwner`: Deployer address
+
+**Dependencies:**
+- Requires `ShadeFXPriceOracle` to be deployed first
 
 ## ✅ Deployment Checklist
 
-- [ ] Bağımlılıklar kuruldu (`npm install`)
-- [ ] `.env` dosyası oluşturuldu ve dolduruldu
-- [ ] Kontratlar compile edildi (`npm run compile`)
-- [ ] Testler geçti (`npm test`)
-- [ ] Network'e bağlanıldı
-- [ ] Testnet token'ları alındı (testnet için)
-- [ ] Deploy edildi (`npm run deploy:localhost` veya `deploy:sepolia` veya `deploy:fhenix`)
-- [ ] Contract address frontend'e eklendi
-- [ ] Currency pair oluşturuldu (opsiyonel)
-- [ ] Contract verify edildi (opsiyonel, Sepolia için)
+- [ ] Dependencies installed (`npm install`)
+- [ ] `.env` file created and filled
+- [ ] Contracts compiled (`npm run compile`)
+- [ ] Tests passed (`npm test`)
+- [ ] Connected to network
+- [ ] Testnet tokens obtained (for testnet)
+- [ ] Price Oracle deployed (`npm run deploy:localhost` or `deploy:sepolia`)
+- [ ] PerpDEX deployed (`npm run deploy:localhost` or `deploy:sepolia`)
+- [ ] Contract addresses added to frontend
+- [ ] Currency pairs added to Oracle
+- [ ] Prices updated from Pyth Network
+- [ ] Contracts verified (optional, for Sepolia)
 
-## 🔍 Deployment Sonrası Kontroller
+## 🔍 Post-Deployment Verification
 
-### 1. Contract Address'i Kontrol Edin
+### 1. Verify Contract Addresses
 
 ```bash
-# Deploy sonrası çıktıda contract address görünecek
-# Veya deployments klasöründe kayıtlı olacak
+# Contract addresses will be shown in deployment output
+# Or check deployments/ directory
 ```
 
-### 2. Contract Fonksiyonlarını Test Edin
+### 2. Test Contract Functions
 
 ```bash
-# Hardhat console kullanarak
+# Using Hardhat console
 npx hardhat console --network localhost
 
-# Contract instance alın
-const ShadeFX = await ethers.getContractFactory("ShadeFX");
-const shadeFX = await ShadeFX.attach("0x...contract_address");
+# Get contract instances
+const PriceOracle = await ethers.getContractFactory("ShadeFXPriceOracle");
+const oracle = await PriceOracle.attach("0x...oracle_address");
 
-# Fonksiyonları test edin
-await shadeFX.owner();
-await shadeFX.minStakeAmount();
-await shadeFX.rewardFeePercentage();
+const PerpDEX = await ethers.getContractFactory("ShadeFXPerpDEX");
+const perpDEX = await PerpDEX.attach("0x...perpdex_address");
+
+# Test functions
+await oracle.owner();
+await perpDEX.owner();
+await perpDEX.priceOracle();
 ```
 
-### 3. Frontend'i Test Edin
+### 3. Test Frontend
 
 ```bash
 cd frontend
@@ -213,51 +295,62 @@ npm install
 npm start
 ```
 
-Frontend'de:
-1. Wallet'ı bağlayın
-2. Contract address'in doğru olduğunu kontrol edin
-3. Currency pair'leri görüntüleyin
-4. Test prediction gönderin
+In the frontend:
+1. Connect your wallet
+2. Verify contract addresses are correct
+3. View available trading pairs
+4. Test creating a position (Long/Short)
+5. Test creating a limit order
 
-## ⚠️ Önemli Notlar
+## ⚠️ Important Notes
 
-1. **Private Key Güvenliği**: `.env` dosyasını asla commit etmeyin
-2. **Testnet Token'ları**: Deploy için yeterli token'ınız olduğundan emin olun
-3. **Network Seçimi**: 
+1. **Private Key Security**: Never commit `.env` file
+2. **Testnet Tokens**: Ensure you have sufficient tokens for deployment
+3. **Network Selection**: 
    - **Development**: Localhost
-   - **Testing**: Sepolia veya Fhenix Helium
-   - **Production**: Henüz yok (FHEVM mainnet bekleniyor)
-4. **FHEVM Gereksinimleri**: FHEVM-compatible network kullanın
-5. **Contract Verification**: Sepolia için Etherscan verification yapabilirsiniz
+   - **Testing**: Sepolia or Fhenix Helium
+   - **Production**: Not yet available (FHEVM mainnet pending)
+4. **FHEVM Requirements**: Use FHEVM-compatible network
+5. **Contract Verification**: You can verify contracts on Etherscan for Sepolia
+6. **Deployment Order**: Price Oracle must be deployed before PerpDEX
+7. **USDC Token**: PerpDEX requires a USDC token address. For testnet, deploy a mock ERC20 or use an existing testnet USDC.
 
-## 🆘 Sorun Giderme
+## 🆘 Troubleshooting
 
-### Compile Hatası
+### Compilation Error
 
 ```bash
-# Cache'i temizleyin
+# Clear cache
 npm run clean
 
-# Tekrar compile edin
+# Recompile
 npm run compile
 ```
 
-### Deploy Hatası
+### Deployment Error
 
-- Private key'in doğru olduğundan emin olun
-- RPC URL'in doğru olduğundan emin olun
-- Network'te yeterli token olduğundan emin olun
-- Chain ID'nin doğru olduğundan emin olun
+- Ensure private key is correct
+- Ensure RPC URL is correct
+- Ensure you have sufficient tokens on the network
+- Ensure chain ID is correct
+- Ensure Price Oracle is deployed before PerpDEX
 
-### Test Hatası
+### Test Error
 
-- Hardhat node'un çalıştığından emin olun (localhost için)
-- FHEVM plugin'in yüklü olduğundan emin olun
-- Test dosyalarında `fhevm.isMock` kontrolü yapıldığından emin olun
+- Ensure Hardhat node is running (for localhost)
+- Ensure FHEVM plugin is installed
+- Ensure test files check `fhevm.isMock`
 
-## 📚 Kaynaklar
+### Price Update Error
+
+- Ensure Pyth Oracle address is correct for the network
+- Ensure pairs are added to Oracle before updating prices
+- Ensure Oracle has permission to update prices
+
+## 📚 Resources
 
 - [FHEVM Documentation](https://docs.zama.ai/fhevm)
 - [Hardhat Deploy Documentation](https://github.com/wighawag/hardhat-deploy)
 - [Fhenix Documentation](https://docs.fhenix.zone)
+- [Pyth Network Documentation](https://docs.pyth.network)
 

@@ -1,7 +1,7 @@
 {
   "name": "shadefx",
   "version": "1.0.0",
-  "description": "Confidential Perpetual DEX",
+  "description": "Privacy-First Perpetual DEX - A decentralized perpetual futures exchange with FHE-encrypted trade directions using FHEVM",
   "main": "index.js",
   "scripts": {
     "clean": "rimraf ./artifacts ./cache ./coverage ./types ./coverage.json && npm run typechain",
@@ -31,7 +31,10 @@
     "ethereum",
     "solidity",
     "confidential",
-    "prediction"
+    "perpetual",
+    "dex",
+    "trading",
+    "leverage"
   ],
   "author": "",
   "license": "BSD-3-Clause-Clear",

@@ -47,7 +47,39 @@ The test suite includes:
 
 ### FHEVM Integration Tests
 
-The main test file `test/ShadeFXPerpDEX.test.ts` tests FHEVM-encrypted operations:
+The main test file `test/ShadeFXPerpDEX.test.ts` tests FHEVM-encrypted operations using **Mock FHEVM**:
+
+**What is Mock FHEVM?**
+- Mock FHEVM simulates FHEVM encryption for testing purposes
+- It's fast, reliable, and doesn't require network connection
+- It tests that contracts correctly handle encrypted values (`ebool`, `euint32`, `euint64`)
+- It verifies FHEVM integration flow (encryption → contract → decryption)
+
+**What Mock FHEVM Tests:**
+- ✅ Contract accepts encrypted inputs (`externalEbool`, `externalEuint32`)
+- ✅ Contract stores encrypted values correctly
+- ✅ Contract processes encrypted values with FHE operations
+- ✅ `FHE.fromExternal()`, `FHE.allowThis()`, `FHE.allow()` work correctly
+- ✅ Events are emitted correctly
+- ✅ Position management with encrypted values
+
+**Why Mock FHEVM is Sufficient:**
+- ✅ Tests contract logic and FHEVM integration
+- ✅ Fast execution (no network delays)
+- ✅ Reliable (no external dependencies)
+- ✅ Perfect for CI/CD pipelines
+- ✅ Production code uses real FHEVM (frontend + Sepolia)
+
+**Run Tests:**
+```bash
+npm test
+# or
+npx hardhat test test/ShadeFXPerpDEX.test.ts
+```
+
+### Test Coverage
+
+The main test file `test/ShadeFXPerpDEX.test.ts` includes:
 
 #### 1. Deployment Tests
 ```bash
@@ -120,12 +152,14 @@ npm test -- --grep "Admin Functions"
 
 ### FHEVM Mock Environment
 
-Tests use Hardhat's FHEVM mock environment, which simulates FHEVM operations without requiring a real FHEVM network.
+Tests use Hardhat's FHEVM mock environment, which simulates FHEVM operations for testing.
 
 **Key points:**
-- Tests automatically use mock FHEVM if available
+- Tests automatically use mock FHEVM (built into Hardhat)
 - No external FHEVM service required
-- Tests run faster than real FHEVM tests
+- Fast and reliable test execution
+- Tests contract logic and FHEVM integration
+- Production code uses real FHEVM on Sepolia testnet
 
 ### Encrypted Input Creation
 

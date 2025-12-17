@@ -317,6 +317,7 @@ See [NETWORKS.md](./NETWORKS.md) for detailed network configuration and setup in
 - [Architecture Documentation](./docs/ARCHITECTURE.md)
 - [API Documentation](./docs/API.md)
 - [FHEVM Integration Guide](./FHEVM_INTEGRATION.md)
+- [Privacy Story](./PRIVACY_STORY.md) - **NEW**: Detailed explanation of our privacy model
 - [Testing Guide](./TESTING.md)
 - [Deployment Guide](./DEPLOYMENT_GUIDE.md)
 - [Network Configuration](./NETWORKS.md)

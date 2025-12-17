@@ -344,6 +344,50 @@ contract ShadeFXPriceOracle is Ownable, Pausable {
     }
     
     /**
+     * @notice Add a new trading pair for testing (without Pyth Oracle requirement)
+     * @dev This function is for testing only - creates a pair without Pyth Oracle
+     * @param pairKey Currency pair key (e.g., "BTCUSD")
+     * @param baseCurrency Base currency symbol (e.g., "BTC")
+     * @param quoteCurrency Quote currency symbol (e.g., "USD")
+     * @param initialPrice Initial price (scaled by PRICE_PRECISION)
+     * @param maxOpenInterest Maximum open interest for this pair
+     * @param maxLeverage Maximum leverage for this pair
+     */
+    function addPairForTesting(
+        string memory pairKey,
+        string memory baseCurrency,
+        string memory quoteCurrency,
+        uint256 initialPrice,
+        uint256 maxOpenInterest,
+        uint256 maxLeverage
+    ) external onlyOwner {
+        if (pairs[pairKey].isActive) revert PairAlreadyExists();
+        if (initialPrice == 0) revert InvalidPrice();
+        
+        pairs[pairKey] = PairConfig({
+            baseCurrency: baseCurrency,
+            quoteCurrency: quoteCurrency,
+            currentPrice: initialPrice,
+            lastUpdateTime: block.timestamp,
+            minCollateral: 5 * 1e6, // 5 USDC default
+            maxCollateral: type(uint256).max, // No max limit
+            maxLeverage: maxLeverage,
+            feePercentage: 0,
+            isActive: true,
+            maxOpenInterest: maxOpenInterest,
+            totalLongSize: 0,
+            totalShortSize: 0,
+            pythPriceId: bytes32(0), // No Pyth price ID for testing
+            coingeckoId: ""
+        });
+        
+        activePairs.push(pairKey);
+        
+        emit PairAdded(pairKey, baseCurrency, quoteCurrency, bytes32(0), "");
+        emit PriceUpdated(pairKey, 0, initialPrice, block.timestamp);
+    }
+    
+    /**
      * @notice Set Pyth price ID for an existing pair
      * @param pairKey Currency pair key
      * @param pythPriceId Pyth Network price feed ID

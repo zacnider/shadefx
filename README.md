@@ -2,6 +2,8 @@
 
 ShadeFX is a revolutionary decentralized perpetual futures exchange that combines blockchain technology with Fully Homomorphic Encryption (FHE) to create a truly private and secure trading experience. Built on Ethereum's Sepolia testnet, ShadeFX enables users to trade cryptocurrency pairs with leverage while protecting their trading strategies from front-running and MEV attacks.
 
+**🚀 No Wallet Extension Needed!** ShadeFX uses Privy for email login with embedded wallets - just enter your email and start trading!
+
 ## 🎯 Project Overview
 
 ShadeFX enables users to:
@@ -30,14 +32,16 @@ ShadeFX enables users to:
 
 ### Frontend
 - **React + TypeScript**: Modern frontend framework
+- **Privy Authentication**: Email login with embedded wallets (no MetaMask needed!)
 - **FHEVM Relayer SDK**: For encryption/decryption operations
 - **Ethers.js**: For blockchain interactions
-- **MetaMask Integration**: Wallet connection and transaction signing
+- **Wagmi + Viem**: For Ethereum interactions
+- **Embedded Wallet**: Privy-managed wallet that works seamlessly with FHEVM
 
 ## 📋 Prerequisites
 
 - Node.js 18+ and npm
-- MetaMask browser extension
+- **No wallet extension needed!** ShadeFX uses Privy for email login with embedded wallets
 - Hardhat for smart contract development
 - FHEVM-compatible network (testnet or local)
 - FHEVM Solidity library (`fhevm` package)
@@ -119,25 +123,40 @@ The frontend will be available at `http://localhost:3000`
 
 ### 8. Connect Wallet
 
+ShadeFX uses **Privy** for wallet authentication, which supports **email login with embedded wallets**. This means you don't need MetaMask or any external wallet to get started!
+
 1. Open `http://localhost:3000` in your browser
-2. Click "Connect Wallet" and select:
-   - **MetaMask**: For external wallet connection
-   - **Email**: For embedded wallet (automatic wallet creation)
-3. If using MetaMask with localhost:
-   - Add Hardhat network to MetaMask:
-     * **Network Name**: Hardhat Local
-     * **RPC URL**: `http://127.0.0.1:8545`
-     * **Chain ID**: `31337`
-     * **Currency Symbol**: `ETH`
-4. For Sepolia testnet:
-   - Ensure you're on Sepolia network
-   - Get test ETH and USDC from faucets
+2. Click **"Connect Wallet"** button
+3. **Privy Modal** will open with login options:
+   - **Email Login** (Recommended): 
+     - Enter your email address
+     - Verify email with code sent to your inbox
+     - Privy automatically creates an **embedded wallet** for you
+     - No MetaMask or external wallet needed!
+   - **Wallet Login** (Optional):
+     - Connect MetaMask or other external wallets
+     - Only available if you have a wallet extension installed
+4. After login:
+   - Your embedded wallet is automatically created
+   - You're connected to Sepolia testnet
+   - You can start trading immediately
+5. For Sepolia testnet:
+   - Get test ETH from [Sepolia Faucet](https://sepoliafaucet.com/)
+   - Get test USDC from [USDC Faucet](https://faucet.circle.com/) (if available)
+   - Or swap ETH to USDC in the Swap section
+
+**Note**: The embedded wallet is managed by Privy and works seamlessly with FHEVM encryption. All transactions are automatically signed without popups for better UX.
 
 ## 📖 Usage
 
 ### For Users
 
-1. **Connect Wallet**: Click "Connect Wallet" and approve the connection (or use embedded wallet)
+1. **Connect Wallet**: 
+   - Click **"Connect Wallet"** button
+   - **Privy modal** opens - choose **Email Login**
+   - Enter your email and verify with code
+   - Privy automatically creates an **embedded wallet** for you
+   - No MetaMask needed! The embedded wallet works seamlessly with FHEVM
 2. **Swap ETH to USDC**: In the Swap section, convert ETH to USDC for trading
 3. **Open a Position**: 
    - Select a trading pair (e.g., BTC/USD)
@@ -146,6 +165,13 @@ The frontend will be available at `http://localhost:3000`
    - Open your position (direction is encrypted with FHE)
 4. **Manage Positions**: View open positions, PnL, and liquidation prices
 5. **Close Positions**: Close positions manually or set limit orders for automatic execution
+
+**Wallet Features:**
+- ✅ **Email Login**: No wallet extension needed
+- ✅ **Embedded Wallet**: Automatically created and managed by Privy
+- ✅ **Auto-Sign**: Transactions are automatically signed (no popups)
+- ✅ **FHEVM Compatible**: Works seamlessly with FHE encryption
+- ✅ **Sepolia Ready**: Automatically connected to Sepolia testnet
 
 ### For Contract Owner
 
@@ -395,27 +421,52 @@ This project is licensed under the **BSD-3-Clause-Clear License**. See the [LICE
 3. Verify price oracle contract is updated
 4. Check network connection
 
-#### MetaMask Connection Issues
+#### Privy Email Login Issues
 
-**Problem**: MetaMask doesn't connect or shows errors.
-
-**Solutions**:
-1. Clear MetaMask cache: Settings → Advanced → Reset Account
-2. Add Sepolia network manually if needed
-3. Ensure MetaMask extension is enabled
-4. Try disconnecting and reconnecting
-5. Restart browser if issues persist
-
-#### Embedded Wallet Not Working
-
-**Problem**: Embedded wallet (Privy) doesn't create wallet.
+**Problem**: Email login doesn't work or embedded wallet isn't created.
 
 **Solutions**:
-1. Check email verification
-2. Clear browser cache and cookies
-3. Try incognito mode
-4. Check Privy configuration
-5. Verify network connection
+1. **Check Email Verification**: 
+   - Make sure you received the verification code
+   - Check spam folder if code doesn't arrive
+   - Request a new code if expired
+2. **Clear Browser Cache**: 
+   - Clear cookies and cache for shadefx.cc
+   - Try incognito mode
+3. **Check Privy Status**: 
+   - Visit [Privy Status Page](https://status.privy.io/)
+   - Ensure Privy service is operational
+4. **Network Issues**: 
+   - Check internet connection
+   - Try refreshing the page
+   - Wait a few seconds and try again
+5. **Browser Compatibility**: 
+   - Use Chrome, Firefox, or Edge (latest versions)
+   - Disable ad blockers temporarily
+
+#### Embedded Wallet Not Created
+
+**Problem**: Email login succeeds but embedded wallet isn't created.
+
+**Solutions**:
+1. Wait a few seconds - wallet creation may take 2-3 seconds
+2. Refresh the page after login
+3. Check browser console for errors
+4. Try logging out and logging in again
+5. Clear browser cache and cookies
+
+#### External Wallet Connection (Optional)
+
+**Problem**: Want to use MetaMask instead of email login.
+
+**Solutions**:
+1. Install MetaMask browser extension
+2. Click "Connect Wallet" → Privy modal opens
+3. Select "Connect Wallet" option in Privy modal
+4. Choose MetaMask from the list
+5. Approve connection in MetaMask popup
+
+**Note**: Email login with embedded wallet is recommended for better UX and FHEVM compatibility.
 
 ### Getting Help
 
